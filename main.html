@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>hi zara !!</title>
+  <link rel="stylesheet" href="main.css">
+</head>
+<body>
+
+  <nav class="fun-navbar">
+    <ul>
+      <li><a href="#lovejar">☁ jar</a></li>
+      <li><a href="#secret">✧ ???</a></li>
+      <li><a href="#polaroids">✿ polaroids</a></li>
+      <li><a href="#unsent">♡ unsent</a></li>
+    </ul>
+  </nav>
+
+    <div class="envelope-container">
+    <img id="letter" src="letter.png" alt="Letter" onclick="openLetter()">
+  </div>
+  <div id="heartContainer"></div>
+  <div id="mainContent">
+    <h1>zara aaliyah</h1>
+    <p>the most cutest girl ive ever laid my eyes upon</p>
+    <p>i used up all of my prep time for this lol. BUT DONT WORRY MY ASSIGNMENTS ARE DONE! but the updates are small that inteded whoops, I WILL TRY TO UPDATE IT TOMMROROW IF CAN</p>
+  </div>
+
+  <h2>aquarium !! 🦈</h2>
+  <div id="aquarium"></div>
+<div id="fish-label"></div>
+
+  <h2>BIRTHDAY ALERT</h2>
+<div class="countdown-box">
+  <span id="countdown"></span>
+</div>
+
+<section id="lovejar">
+<div class="love-jar-container">
+  <h2>love jar 💌 *more to come</h2>
+  <img src="jar.png" alt="Love Jar" class="jar-image">
+  <ul class="love-list">
+    <li><stike>bday gift 2025</stike></li>
+    <li><stike>cookies</stike></li>
+    <li><stike>snacks</stike></li>
+    <li><stike>keychains</stike></li>
+  </ul>
+</div>
+</section>
+
+<section id="secret">
+<h2>scratch to reveal!</h2>
+<div class="scratch-container">
+  <div class="scratch-area">
+    <div id="hiddenMessage">ur roblox game comes out in the middle of september!</div>
+    <canvas id="scratchCanvas"></canvas>
+    <img id="coin" src="coin.png" alt="coin">
+  </div>
+</div>
+</section>
+
+<h2>florist heaven 🌻</h2>
+    <div class="controls">
+    <button onclick="addFlower('rose.png')">Add Rose 🌹</button>
+    <button onclick="addFlower('tulip.png')">Add Tulip 🌷</button>
+    <button onclick="addFlower('daisy.png')">Add Daisy 🌼</button>
+    <button onclick="clearBouquet()">Clear Bouquet ❌</button>
+</div>
+
+<div class="bouquet" id="bouquetContainer">
+    <img src="bouquetPaper.png" class="bouquet-paper" alt="Bouquet Paper">
+</div>
+
+<h2>lethal facecard reminder!</h2>
+    <div id="camera-section">
+        <button id="start-camera">open camera!</button>
+        <div id="camera">
+  <video id="video" autoplay playsinline></video>
+  <img src="mirror.png" alt="Overlay" class="overlay" />
+</div>
+
+    </div>
+
+<section id="polaroids">
+<div class="polaroid-banner">
+  <img src="polaroid.png" alt="Our Moments">
+</div>
+</section>
+
+<section id="unsent">
+<h2>unsent projects!</h2>
+
+  <div class="gallery">
+    <div class="gallery-item"><img src="one.png" alt="one"></div>
+    <div class="gallery-item"><img src="two.png" alt="two"></div>
+    <div class="gallery-item"><img src="three.png" alt="three"></div>
+    <div class="gallery-item"><img src="four.png" alt="four"></div>
+    <div class="gallery-item"><img src="five.png" alt="five"></div>
+    <div class="gallery-item"><img src="six.png" alt="six"></div>
+  </div>
+
+</section>
+
+<audio id="bgMusic" loop>
+  <source src="song.mp3" type="audio/mp3">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="music-widget" id="musicWidget">
+  <img src="cover.jpg" id="albumCover" alt="Album Cover">
+  <div class="playPauseIcon" id="musicState">||</div>
+</div>
+
+<div id="customScrollbar">
+  <img src="plushie.png" alt="Plushie" id="plushieThumb" draggable="false">
+</div>
+
+<h2>typewriter!</h2>
+
+<form action="https://api.web3forms.com/submit" method="POST"
+  style="
+    max-width: 600px;
+    font-family: 'Courier New', Courier, monospace;
+    background: #f5f0e6; /* light parchment */
+    padding: 25px 30px;
+    border-radius: 12px;
+    box-shadow: 0 6px 15px rgba(101, 67, 33, 0.3);
+    display: flex;
+    align-items: flex-start;
+    gap: 50px;
+    font-size: 14px;
+    color: #5b3a1a; /* dark brown text */
+    border: 1px solid #c2a679;
+  "
+>
+  <div style="flex: 1; min-width: 260px;">
+    <!-- Replace with your Access Key -->
+    <input type="hidden" name="access_key" value="53b1b5f9-ed61-4873-97dd-fc7c6306134e" />
+
+    <!-- Name -->
+    <label
+      style="
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-shadow: 0 1px 0 #d6c8b5;
+      "
+      >Name:</label
+    >
+    <input
+      type="text"
+      name="name"
+      required
+      style="
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 18px;
+        border-radius: 6px;
+        border: 1.5px solid #a67c33;
+        font-size: 14px;
+        font-family: 'Courier New', Courier, monospace;
+        background: #fff8f0;
+        box-shadow: inset 1px 1px 3px #d9cbb7;
+        color: #5b3a1a;
+        transition: border-color 0.3s ease;
+      "
+      onfocus="this.style.borderColor='#7d5a17'"
+      onblur="this.style.borderColor='#a67c33'"
+    />
+
+    <!-- Email -->
+    <label
+      style="
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-shadow: 0 1px 0 #d6c8b5;
+      "
+      >Email:</label
+    >
+    <input
+      type="email"
+      name="email"
+      required
+      style="
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 18px;
+        border-radius: 6px;
+        border: 1.5px solid #a67c33;
+        font-size: 14px;
+        font-family: 'Courier New', Courier, monospace;
+        background: #fff8f0;
+        box-shadow: inset 1px 1px 3px #d9cbb7;
+        color: #5b3a1a;
+        transition: border-color 0.3s ease;
+      "
+      onfocus="this.style.borderColor='#7d5a17'"
+      onblur="this.style.borderColor='#a67c33'"
+    />
+
+    <!-- Message -->
+    <label
+      style="
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-shadow: 0 1px 0 #d6c8b5;
+      "
+      >Message:</label
+    >
+    <textarea
+      name="message"
+      required
+      style="
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 18px;
+        border-radius: 6px;
+        border: 1.5px solid #a67c33;
+        font-size: 14px;
+        font-family: 'Courier New', Courier, monospace;
+        background: #fff8f0;
+        box-shadow: inset 1px 1px 3px #d9cbb7;
+        color: #5b3a1a;
+        min-height: 90px;
+        transition: border-color 0.3s ease;
+        resize: vertical;
+      "
+      onfocus="this.style.borderColor='#7d5a17'"
+      onblur="this.style.borderColor='#a67c33'"
+    ></textarea>
+
+    <!-- Honeypot -->
+    <input type="checkbox" name="botcheck" style="display: none" />
+
+    <!-- Submit -->
+    <button
+      type="submit"
+      style="
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, #8b5e11, #b07b2c);
+        color: #fff7df;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        box-shadow: 0 4px 6px rgba(101, 67, 33, 0.5);
+        transition: background 0.3s ease;
+        font-family: 'Courier New', Courier, monospace;
+      "
+      onmouseover="this.style.background='linear-gradient(135deg, #b07b2c, #8b5e11)'"
+      onmouseout="this.style.background='linear-gradient(135deg, #8b5e11, #b07b2c)'"
+    >
+      Send!
+    </button>
+  </div>
+
+  <div style="flex-shrink: 0;">
+    <img
+      src="typewriter.png"
+      alt="Typewriter"
+      style="max-width: 140px; height: auto; display: block; filter: sepia(0.4) saturate(1.2) brightness(0.95);"
+    />
+  </div>
+</form>
+
+<footer class="site-footer">
+  <p>will not be updated for a while to give room for "LABRATORY-028:PROJECT DARLING' development *SORRY! </p>
+</footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
