@@ -312,20 +312,31 @@ const aquarium = document.getElementById('aquarium');
 
   // Spawn every 2 seconds
   setInterval(spawnFish, 500);
+document.getElementById("start-camera").addEventListener("click", async () => {
+    const video = document.getElementById("camera");
 
-const startButton = document.getElementById("start-camera");
-const video = document.getElementById("camera");
-
-startButton.addEventListener("click", async function () {
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                facingMode: "user"
+            },
+            audio: false
+        });
+
+        // Assign stream to video
         video.srcObject = stream;
+        await video.play();
+
+        // Hide the start button after enabling
+        document.getElementById("start-camera").style.display = "none";
+
     } catch (err) {
-        alert("Camera access denied or not available.");
-        console.error(err);
+        alert("Camera access denied or unavailable.");
+        console.error("Camera error:", err);
     }
 });
-
 
     const bouquetContainer = document.getElementById("bouquetContainer");
     let flowers = [];
@@ -376,3 +387,4 @@ startButton.addEventListener("click", async function () {
         bouquetContainer.appendChild(paper);
 
     }
+
