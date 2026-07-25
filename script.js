@@ -6,9 +6,13 @@ document.addEventListener("DOMContentLoaded", () => {
     closeBtn.addEventListener("click", () => {
       overlay.style.opacity = "0";
       overlay.style.pointerEvents = "none";
-      setTimeout(() => overlay.remove(), 500);
+      setTimeout(() => overlay.remove(), 500); // remove after fade out
     });
   }
+
+  // Initialize the new features once the DOM is ready
+  initWishlist();
+  initDoodleCanvas();
 });
 
 function checkPassword() {
@@ -51,16 +55,15 @@ function createHeart() {
 setInterval(() => {
   createHeart();
 }, 300);
-
 if (window.location.pathname.includes("main.html")) {
   function createSeaAngel() {
     const angel = document.createElement("img");
-    angel.src = "sea-angel.png";
+    angel.src = "sea-angel.png"; // Ensure this image exists in your folder
     angel.classList.add("sea-angel");
 
-    const size = Math.random() * 20 + 20;
+    const size = Math.random() * 20 + 20; // Size: 20px to 40px
     const left = Math.random() * 100;
-    const duration = Math.random() * 10 + 10;
+    const duration = Math.random() * 10 + 10; // Duration: 10s to 20s
     const delay = Math.random() * 5;
 
     angel.style.left = `${left}%`;
@@ -75,7 +78,6 @@ if (window.location.pathname.includes("main.html")) {
 
   setInterval(createSeaAngel, 800);
 }
-
 function openLetter() {
   const letter = document.getElementById("letter");
   const mainContent = document.getElementById("mainContent");
@@ -87,9 +89,11 @@ function openLetter() {
     letter.style.display = "none";
     mainContent.style.display = "block";
 
+    // 📝 Apply typewriter effect
     [...mainContent.children].forEach(el => typeWriterEffect(el, 30));
   }, 600);
 }
+
 
 function typeWriterEffect(element, speed = 50) {
   const text = element.innerHTML;
@@ -113,7 +117,7 @@ function updateCountdown() {
     ? now.getFullYear() + 1
     : now.getFullYear();
 
-  const birthday = new Date(currentYear, 2, 8);
+  const birthday = new Date(currentYear, 2, 8); // March is month 2 (0-indexed)
   const diff = birthday - now;
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -129,98 +133,97 @@ function updateCountdown() {
   }
 }
 
+// Start immediately and then update every second
 updateCountdown();
 setInterval(updateCountdown, 1000);
 
 const plushie = document.getElementById('plushieThumb');
-if (plushie) {
-  let isDragging = false;
-  let startY, startScroll;
+let isDragging = false;
+let startY, startScroll;
 
-  plushie.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    startY = e.clientY;
-    startScroll = window.scrollY;
-    plushie.style.cursor = 'grabbing';
-  });
+plushie.addEventListener('mousedown', (e) => {
+  isDragging = true;
+  startY = e.clientY;
+  startScroll = window.scrollY;
+  plushie.style.cursor = 'grabbing';
+});
 
-  document.addEventListener('mouseup', () => {
-    isDragging = false;
-    plushie.style.cursor = 'grab';
-  });
+document.addEventListener('mouseup', () => {
+  isDragging = false;
+  plushie.style.cursor = 'grab';
+});
 
-  document.addEventListener('mousemove', (e) => {
-    if (isDragging) {
-      const delta = e.clientY - startY;
-      window.scrollTo(0, startScroll + delta * 2);
-    }
-  });
+document.addEventListener('mousemove', (e) => {
+  if (isDragging) {
+    const delta = e.clientY - startY;
+    window.scrollTo(0, startScroll + delta * 2); // Adjust scroll speed
+  }
+});
 
-  window.addEventListener('scroll', () => {
-    const scrollRatio = window.scrollY / (document.body.scrollHeight - window.innerHeight);
-    const maxPlushieMove = window.innerHeight - plushie.offsetHeight;
-    plushie.style.top = `${scrollRatio * maxPlushieMove}px`;
-  });
-}
+// Sync plushie with page scroll
+window.addEventListener('scroll', () => {
+  const scrollRatio = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+  const maxPlushieMove = window.innerHeight - plushie.offsetHeight;
+  plushie.style.top = `${scrollRatio * maxPlushieMove}px`;
+});
 
 const canvas = document.getElementById('scratchCanvas');
-if (canvas) {
-  const ctx = canvas.getContext('2d');
-  const coin = document.getElementById('coin');
-  const message = document.getElementById('hiddenMessage');
+const ctx = canvas.getContext('2d');
+const coin = document.getElementById('coin');
+const message = document.getElementById('hiddenMessage');
 
-  let isDrawing = false;
+let isDrawing = false;
 
-  function setupCanvas() {
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = '#C0C0C0';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+// Fill canvas with gray overlay
+function setupCanvas() {
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#C0C0C0';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+setupCanvas();
+
+// Events
+canvas.addEventListener('mousedown', () => isDrawing = true);
+canvas.addEventListener('mouseup', () => {
+  isDrawing = false;
+  checkReveal();
+});
+canvas.addEventListener('mouseleave', () => {
+  isDrawing = false;
+  coin.style.display = 'none';
+});
+canvas.addEventListener('mouseenter', () => {
+  coin.style.display = 'block';
+});
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  // Move coin to follow cursor inside canvas
+  coin.style.left = `${e.clientX}px`;
+  coin.style.top = `${e.clientY}px`;
+
+  if (isDrawing) {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(x, y, 15, 0, Math.PI * 2, false);
+    ctx.fill();
+  }
+});
+
+function checkReveal() {
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  let transparentPixels = 0;
+  for (let i = 0; i < imageData.data.length; i += 4) {
+    if (imageData.data[i + 3] === 0) transparentPixels++;
   }
 
-  setupCanvas();
+  const percent = transparentPixels / (canvas.width * canvas.height) * 100;
 
-  canvas.addEventListener('mousedown', () => isDrawing = true);
-  canvas.addEventListener('mouseup', () => {
-    isDrawing = false;
-    checkReveal();
-  });
-  canvas.addEventListener('mouseleave', () => {
-    isDrawing = false;
-    if (coin) coin.style.display = 'none';
-  });
-  canvas.addEventListener('mouseenter', () => {
-    if (coin) coin.style.display = 'block';
-  });
-  canvas.addEventListener('mousemove', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    if (coin) {
-      coin.style.left = `${e.clientX}px`;
-      coin.style.top = `${e.clientY}px`;
-    }
-
-    if (isDrawing) {
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.beginPath();
-      ctx.arc(x, y, 15, 0, Math.PI * 2, false);
-      ctx.fill();
-    }
-  });
-
-  function checkReveal() {
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    let transparentPixels = 0;
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      if (imageData.data[i + 3] === 0) transparentPixels++;
-    }
-
-    const percent = transparentPixels / (canvas.width * canvas.height) * 100;
-
-    if (percent > 50 && message) {
-      message.style.opacity = 1;
-    }
+  if (percent > 50) {
+    message.style.opacity = 1;
   }
 }
 
@@ -229,28 +232,29 @@ const cover = document.getElementById('albumCover');
 const icon = document.getElementById('musicState');
 const widget = document.getElementById('musicWidget');
 
-if (music && widget) {
-  window.addEventListener("click", () => {
-    if (music.paused) {
-      music.play();
-    }
-  }, { once: true });
+// Allow autoplay if user interacts
+window.addEventListener("click", () => {
+  if (music.paused) {
+    music.play();
+  }
+}, { once: true });
 
-  widget.addEventListener('click', () => {
-    if (music.paused) {
-      music.play();
-      widget.classList.remove('music-paused');
-      if (icon) icon.textContent = '||';
-    } else {
-      music.pause();
-      widget.classList.add('music-paused');
-      if (icon) icon.textContent = '▶';
-    }
-  });
-}
+// Toggle music on widget click
+widget.addEventListener('click', () => {
+  if (music.paused) {
+    music.play();
+    widget.classList.remove('music-paused');
+    icon.textContent = '||';
+  } else {
+    music.pause();
+    widget.classList.add('music-paused');
+    icon.textContent = '▶';
+  }
+});
 
 const aquarium = document.getElementById('aquarium');
-if (aquarium) {
+
+  // Example fish data
   const fishList = [
     'Sea Nettle Jellyfish.png',
     'Sea Bunny.png',
@@ -266,19 +270,23 @@ if (aquarium) {
     const fish = document.createElement('div');
     fish.className = 'fish';
 
+    // Random image
     const fishImageName = fishList[Math.floor(Math.random() * fishList.length)];
 
     const img = document.createElement('img');
     img.src = fishImageName;
 
+    // Label
     const label = document.createElement('div');
     label.className = 'fish-label';
     label.innerText = fishImageName.replace('.png', '');
 
+    // Append
     fish.appendChild(label);
     fish.appendChild(img);
     aquarium.appendChild(fish);
 
+    // Start position
     const fromLeft = Math.random() < 0.5;
     const startX = fromLeft ? -120 : aquarium.offsetWidth + 20;
     const y = Math.random() * (aquarium.offsetHeight - 100);
@@ -293,8 +301,8 @@ if (aquarium) {
       const x = parseFloat(fish.style.left) + direction * speed;
       fish.style.left = `${x}px`;
 
-      if ((direction === 1 && x > aquarium.offsetWidth + 120) ||
-          (direction === -1 && x < -120)) {
+      if (direction === 1 && x > aquarium.offsetWidth + 120 ||
+          direction === -1 && x < -120) {
         fish.remove();
       } else {
         requestAnimationFrame(move);
@@ -308,178 +316,318 @@ if (aquarium) {
     move();
   }
 
-  setInterval(spawnFish, 2000);
-}
-
-const startCamBtn = document.getElementById("start-camera");
-if (startCamBtn) {
-  startCamBtn.addEventListener("click", async () => {
-    const video = document.getElementById("video");
+  // Spawn every 2 seconds
+  setInterval(spawnFish, 500);
+document.getElementById("start-camera").addEventListener("click", async () => {
+    const video = document.getElementById("camera");
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: "user"
-        },
-        audio: false
-      });
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                facingMode: "user"
+            },
+            audio: false
+        });
 
-      if (video) {
+        // Assign stream to video
         video.srcObject = stream;
         await video.play();
-      }
 
-      startCamBtn.style.display = "none";
+        // Hide the start button after enabling
+        document.getElementById("start-camera").style.display = "none";
 
     } catch (err) {
-      alert("Camera access denied or unavailable.");
-      console.error("Camera error:", err);
+        alert("Camera access denied or unavailable.");
+        console.error("Camera error:", err);
     }
+});
+
+    const bouquetContainer = document.getElementById("bouquetContainer");
+    let flowers = [];
+
+    function addFlower(src) {
+        if (flowers.length >= 9) {
+            return;
+        }
+
+        // Add random properties for size & rotation
+        flowers.push({
+            src,
+            size: Math.random() * 40 + 60, // between 60px and 100px
+            rotation: Math.random() * 40 - 20 // between -20° and +20°
+        });
+
+        renderBouquet();
+    }
+
+    function clearBouquet() {
+        flowers = [];
+        renderBouquet();
+    }
+
+    function renderBouquet() {
+        bouquetContainer.innerHTML = '<img src="bouquetPaper.png" class="bouquet-paper" alt="Bouquet Paper">';
+
+        const startX = 100;
+        const spacing = 25;
+        const y = 150;
+
+        flowers.forEach((flower, index) => {
+            const img = document.createElement('img');
+            img.src = flower.src;
+            img.classList.add('flower');
+
+            img.style.width = `${flower.size}px`;
+            img.style.height = `${flower.size}px`;
+            img.style.left = `${startX + index * spacing}px`;
+            img.style.top = `${y}px`;
+            img.style.transform = `translate(-50%, -50%) rotate(${flower.rotation}deg)`;
+
+            bouquetContainer.appendChild(img);
+        });
+
+        // Keep bouquet paper on top
+        const paper = bouquetContainer.querySelector('.bouquet-paper');
+        bouquetContainer.appendChild(paper);
+
+    }
+
+/* ======================================================
+   RECOVERY WISHLIST
+   ====================================================== */
+
+// Default starter ideas — feel free to edit this list
+let wishlistItems = [
+  { text: "cozy movie marathon with all the snacks", checked: false },
+  { text: "picnic date at the park", checked: false },
+  { text: "go get matching bubble teas", checked: false },
+  { text: "amusement park day", checked: false },
+  { text: "bake cookies together", checked: false }
+];
+
+function initWishlist() {
+  const list = document.getElementById("wishlistItems");
+  const input = document.getElementById("wishlistInput");
+  if (!list) return; // section not on this page
+
+  renderWishlist();
+
+  // Allow pressing Enter in the input box to add an item
+  if (input) {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addWishlistItem();
+      }
+    });
+  }
+}
+
+function renderWishlist() {
+  const list = document.getElementById("wishlistItems");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  wishlistItems.forEach((item, index) => {
+    const li = document.createElement("li");
+    li.className = "wishlist-item" + (item.checked ? " checked" : "");
+
+    const checkboxId = `wishlist-check-${index}`;
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.id = checkboxId;
+    checkbox.checked = item.checked;
+    checkbox.addEventListener("change", () => toggleWishlistItem(index));
+
+    const label = document.createElement("label");
+    label.setAttribute("for", checkboxId);
+    label.textContent = item.text;
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "wishlist-remove-btn";
+    removeBtn.textContent = "✕";
+    removeBtn.title = "remove item";
+    removeBtn.addEventListener("click", () => removeWishlistItem(index));
+
+    li.appendChild(checkbox);
+    li.appendChild(label);
+    li.appendChild(removeBtn);
+    list.appendChild(li);
   });
 }
 
-const bouquetContainer = document.getElementById("bouquetContainer");
-let flowers = [];
+function addWishlistItem() {
+  const input = document.getElementById("wishlistInput");
+  if (!input) return;
 
-function addFlower(src) {
-  if (flowers.length >= 9) {
-    return;
+  const value = input.value.trim();
+  if (value === "") return;
+
+  wishlistItems.push({ text: value, checked: false });
+  input.value = "";
+  renderWishlist();
+  input.focus();
+}
+
+function toggleWishlistItem(index) {
+  if (!wishlistItems[index]) return;
+  wishlistItems[index].checked = !wishlistItems[index].checked;
+  renderWishlist();
+}
+
+function removeWishlistItem(index) {
+  wishlistItems.splice(index, 1);
+  renderWishlist();
+}
+
+/* ======================================================
+   LIVE INTERACTIVE DOODLE CANVAS
+   ====================================================== */
+
+let doodleCtx = null;
+let doodleDrawing = false;
+let doodleLastX = 0;
+let doodleLastY = 0;
+let doodleBrushSize = 4;   // thin by default
+const DOODLE_THIN = 4;
+const DOODLE_THICK = 14;
+
+function initDoodleCanvas() {
+  const canvasEl = document.getElementById("doodleCanvas");
+  if (!canvasEl) return; // section not on this page
+
+  doodleCtx = canvasEl.getContext("2d");
+
+  // Start with a white background so saved/downloaded images aren't transparent
+  doodleCtx.fillStyle = "#ffffff";
+  doodleCtx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+  doodleCtx.lineCap = "round";
+  doodleCtx.lineJoin = "round";
+
+  // Keep the internal drawing resolution matched to how large the canvas is shown,
+  // so drawing lines up correctly with the cursor/finger on all screen sizes.
+  function resizeDoodleCanvas() {
+    const rect = canvasEl.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+
+    // Preserve existing artwork when resizing
+    const prevDrawing = canvasEl.toDataURL();
+
+    canvasEl.width = rect.width * ratio;
+    canvasEl.height = rect.height * ratio;
+    doodleCtx.scale(ratio, ratio);
+    doodleCtx.fillStyle = "#ffffff";
+    doodleCtx.fillRect(0, 0, rect.width, rect.height);
+    doodleCtx.lineCap = "round";
+    doodleCtx.lineJoin = "round";
+
+    const img = new Image();
+    img.onload = () => {
+      doodleCtx.drawImage(img, 0, 0, rect.width, rect.height);
+    };
+    img.src = prevDrawing;
   }
 
-  flowers.push({
-    src,
-    size: Math.random() * 40 + 60,
-    rotation: Math.random() * 40 - 20
-  });
+  resizeDoodleCanvas();
+  window.addEventListener("resize", resizeDoodleCanvas);
 
-  renderBouquet();
-}
-
-function clearBouquet() {
-  flowers = [];
-  renderBouquet();
-}
-
-function renderBouquet() {
-  if (!bouquetContainer) return;
-  bouquetContainer.innerHTML = '<img src="bouquetPaper.png" class="bouquet-paper" alt="Bouquet Paper">';
-
-  const startX = 100;
-  const spacing = 25;
-  const y = 150;
-
-  flowers.forEach((flower, index) => {
-    const img = document.createElement('img');
-    img.src = flower.src;
-    img.classList.add('flower');
-
-    img.style.width = `${flower.size}px`;
-    img.style.height = `${flower.size}px`;
-    img.style.left = `${startX + index * spacing}px`;
-    img.style.top = `${y}px`;
-    img.style.transform = `translate(-50%, -50%) rotate(${flower.rotation}deg)`;
-
-    bouquetContainer.appendChild(img);
-  });
-
-  const paper = bouquetContainer.querySelector('.bouquet-paper');
-  if (paper) bouquetContainer.appendChild(paper);
-}
-
-// ==========================================
-// NEW ADDITIONS: Drawing Canvas & Wishlist
-// ==========================================
-
-const tCanvas = document.getElementById('togetherCanvas');
-let currentStrokeSize = 4;
-
-if (tCanvas) {
-  const tCtx = tCanvas.getContext('2d');
-  let drawing = false;
-
-  tCtx.lineCap = 'round';
-  tCtx.lineJoin = 'round';
-
-  function getCanvasCoords(e) {
-    const rect = tCanvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  function getPointerPos(evt) {
+    const rect = canvasEl.getBoundingClientRect();
+    if (evt.touches && evt.touches.length > 0) {
+      return {
+        x: evt.touches[0].clientX - rect.left,
+        y: evt.touches[0].clientY - rect.top
+      };
+    }
     return {
-      x: clientX - rect.left,
-      y: clientY - rect.top
+      x: evt.clientX - rect.left,
+      y: evt.clientY - rect.top
     };
   }
 
-  function startDrawing(e) {
-    drawing = true;
-    const { x, y } = getCanvasCoords(e);
-    tCtx.beginPath();
-    tCtx.moveTo(x, y);
+  function startDrawing(evt) {
+    evt.preventDefault();
+    doodleDrawing = true;
+    const pos = getPointerPos(evt);
+    doodleLastX = pos.x;
+    doodleLastY = pos.y;
   }
 
-  function draw(e) {
-    if (!drawing) return;
-    if (e.touches) e.preventDefault();
-    const { x, y } = getCanvasCoords(e);
-    const color = document.getElementById('brushColor').value;
+  function drawMove(evt) {
+    if (!doodleDrawing) return;
+    evt.preventDefault(); // stop the page from scrolling while drawing on touch devices
 
-    tCtx.strokeStyle = color;
-    tCtx.lineWidth = currentStrokeSize;
-    tCtx.lineTo(x, y);
-    tCtx.stroke();
+    const pos = getPointerPos(evt);
+    const colorInput = document.getElementById("doodleColor");
+    const color = colorInput ? colorInput.value : "#ff69b4";
+
+    doodleCtx.strokeStyle = color;
+    doodleCtx.lineWidth = doodleBrushSize;
+    doodleCtx.beginPath();
+    doodleCtx.moveTo(doodleLastX, doodleLastY);
+    doodleCtx.lineTo(pos.x, pos.y);
+    doodleCtx.stroke();
+
+    doodleLastX = pos.x;
+    doodleLastY = pos.y;
   }
 
-  function stopDrawing() {
-    drawing = false;
-    tCtx.beginPath();
+  function stopDrawing(evt) {
+    doodleDrawing = false;
   }
 
-  tCanvas.addEventListener('mousedown', startDrawing);
-  tCanvas.addEventListener('mousemove', draw);
-  tCanvas.addEventListener('mouseup', stopDrawing);
-  tCanvas.addEventListener('mouseleave', stopDrawing);
+  // Mouse support
+  canvasEl.addEventListener("mousedown", startDrawing);
+  canvasEl.addEventListener("mousemove", drawMove);
+  canvasEl.addEventListener("mouseup", stopDrawing);
+  canvasEl.addEventListener("mouseleave", stopDrawing);
 
-  tCanvas.addEventListener('touchstart', startDrawing, { passive: false });
-  tCanvas.addEventListener('touchmove', draw, { passive: false });
-  tCanvas.addEventListener('touchend', stopDrawing);
+  // Touch support (mobile / tablets) — passive:false lets us preventDefault to block scrolling
+  canvasEl.addEventListener("touchstart", startDrawing, { passive: false });
+  canvasEl.addEventListener("touchmove", drawMove, { passive: false });
+  canvasEl.addEventListener("touchend", stopDrawing, { passive: false });
+  canvasEl.addEventListener("touchcancel", stopDrawing, { passive: false });
 }
 
 function setBrushSize(size) {
-  currentStrokeSize = size;
-}
+  const thinBtn = document.getElementById("brushThinBtn");
+  const thickBtn = document.getElementById("brushThickBtn");
 
-function clearTogetherCanvas() {
-  const tCanvas = document.getElementById('togetherCanvas');
-  if (tCanvas) {
-    const tCtx = tCanvas.getContext('2d');
-    tCtx.clearRect(0, 0, tCanvas.width, tCanvas.height);
+  if (size === "thick") {
+    doodleBrushSize = DOODLE_THICK;
+    if (thickBtn) thickBtn.classList.add("active-brush");
+    if (thinBtn) thinBtn.classList.remove("active-brush");
+  } else {
+    doodleBrushSize = DOODLE_THIN;
+    if (thinBtn) thinBtn.classList.add("active-brush");
+    if (thickBtn) thickBtn.classList.remove("active-brush");
   }
 }
 
-function downloadCanvas() {
-  const tCanvas = document.getElementById('togetherCanvas');
-  if (tCanvas) {
-    const link = document.createElement('a');
-    link.download = 'our-doodle.png';
-    link.href = tCanvas.toDataURL();
-    link.click();
-  }
+function clearDoodle() {
+  const canvasEl = document.getElementById("doodleCanvas");
+  if (!canvasEl || !doodleCtx) return;
+
+  const rect = canvasEl.getBoundingClientRect();
+  const ratio = window.devicePixelRatio || 1;
+
+  doodleCtx.setTransform(1, 0, 0, 1, 0, 0);
+  doodleCtx.scale(ratio, ratio);
+  doodleCtx.fillStyle = "#ffffff";
+  doodleCtx.fillRect(0, 0, rect.width, rect.height);
 }
 
-function addWishItem() {
-  const input = document.getElementById('newWishInput');
-  if (!input) return;
-  const text = input.value.trim();
-  if (!text) return;
+function saveDoodle() {
+  const canvasEl = document.getElementById("doodleCanvas");
+  if (!canvasEl) return;
 
-  const ul = document.getElementById('wishlistItems');
-  if (ul) {
-    const li = document.createElement('li');
-    li.innerHTML = `<input type="checkbox"> ${text}`;
-    ul.appendChild(li);
-  }
-
-  input.value = '';
+  const link = document.createElement("a");
+  link.download = "our-doodle.png";
+  link.href = canvasEl.toDataURL("image/png");
+  link.click();
 }
