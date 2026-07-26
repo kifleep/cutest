@@ -12,7 +12,6 @@ body {
   overflow: hidden;
   position: relative;
 }
-
 #lockScreen {
   text-align: center;
   background: white;
@@ -20,12 +19,10 @@ body {
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
   padding: 30px;
 }
-
 #lockScreen h1 {
   color: #FF69B4;
   font-size: 1.8em;
 }
-
 input[type="password"] {
   padding: 10px;
   border-radius: 10px;
@@ -34,7 +31,6 @@ input[type="password"] {
   margin-top: 10px;
   font-size: 1em;
 }
-
 button {
   background: #FF69B4;
   color: white;
@@ -45,12 +41,10 @@ button {
   margin-top: 10px;
   cursor: pointer;
 }
-
 #errorMsg {
   color: red;
   margin-top: 10px;
 }
-
 .heart {
   position: absolute;
   width: 20px;
@@ -60,7 +54,6 @@ button {
   animation: floatUp 10s linear infinite;
   opacity: 0.7;
 }
-
 .heart::before,
 .heart::after {
   content: '';
@@ -68,7 +61,6 @@ button {
   background: pink;
   border-radius: 50%;
 }
-
 .heart::before {
   top: -50%;
   left: 0;
@@ -81,7 +73,6 @@ button {
   width: 100%;
   height: 100%;
 }
-
 @keyframes floatUp {
   from {
     transform: translateY(0) rotate(45deg);
@@ -96,18 +87,15 @@ button {
   text-align: center;
   margin-bottom: 20px;
 }
-
 #letter {
   width: 300px;
   height: auto;
   cursor: pointer;
   transition: transform 0.3s ease;
 }
-
 #letter:hover {
   transform: scale(1.05);
 }
-
 /* Your hidden message */
 #mainContent {
   display: none;
@@ -121,12 +109,10 @@ button {
   box-shadow: 0 0 20px rgba(0,0,0,0.1);
   animation: fadeIn 1s ease forwards;
 }
-
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 /* Overlay background */
 #welcomeOverlay {
   position: fixed;
@@ -140,10 +126,8 @@ button {
   align-items: center;
   z-index: 9999;
   opacity: 0;
-  pointer-events: none;
   animation: fadeInOverlay 0.8s ease forwards;
 }
-
 /* Inner content */
 .welcome-content {
   background: white;
@@ -156,8 +140,8 @@ button {
   font-family: 'Comic Sans MS', cursive;
   transform: scale(0.9);
   animation: popUp 0.8s ease forwards;
+  pointer-events: auto; /* always clickable, independent of the overlay's fade animation */
 }
-
 /* Close button */
 #welcomeOverlay button {
   background: #FF69B4;
@@ -168,20 +152,17 @@ button {
   border-radius: 10px;
   margin-top: 15px;
   cursor: pointer;
+  pointer-events: auto;
 }
-
 #welcomeOverlay button:hover {
   background: #e0579d;
 }
-
 /* Animations */
 @keyframes fadeInOverlay {
   to {
     opacity: 1;
-    pointer-events: auto;
   }
 }
-
 @keyframes popUp {
   to {
     transform: scale(1);
