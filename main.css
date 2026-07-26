@@ -378,6 +378,17 @@ h2 {
     margin-top: 60px;
     background: black;
     border-radius: 15px;
+    overflow: hidden;         /* clip the video feed to this box */
+}
+
+/* The live camera feed itself — without this, the <video> renders at its
+   native stream resolution (e.g. 1280x720) instead of fitting the box */
+#camera video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 15px;
 }
 
 /* The overlay image on top of camera */
