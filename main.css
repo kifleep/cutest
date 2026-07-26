@@ -179,89 +179,6 @@ body::-webkit-scrollbar {
   user-select: none;
 }
 
-.love-jar-container {
-  text-align: center;
-  margin: 40px 0;
-  z-index: 2;
-}
-
-.jar-image {
-  width: 150px;
-  margin-bottom: 15px;
-}
-
-.love-list {
-  list-style: none;
-  padding: 0;
-  max-height: 150px;
-  overflow-y: auto;
-  background: rgba(255, 255, 255, 0.8);
-  display: inline-block;
-  text-align: left;
-  padding: 15px;
-  border-radius: 10px;
-  width: 260px;
-  font-family: 'Comic Sans MS', cursive;
-  color: #d60076;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-  text-decoration: line-through;
-}
-
-.love-list li {
-  margin: 8px 0;
-  font-size: 1em;
-}
-
-.scratch-container {
-  text-align: center;
-  margin-top: 40px;
-  position: relative;
-}
-
-.scratch-area {
-  position: relative;
-  display: inline-block;
-}
-
-#scratchCanvas {
-  background: #ccc;
-  border-radius: 15px;
-  cursor: none; /* Hide system cursor for better illusion */
-}
-
-#hiddenMessage {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 300px;
-  height: 150px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Comic Sans MS', cursive;
-  color: #d60076;
-  font-size: 1.2em;
-  font-weight: bold;
-  pointer-events: none;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 15px;
-  border: 2px dashed #ff69b4;
-  z-index: 1;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-}
-
-#coin {
-  width: 50px;
-  height: 50px;
-  position: fixed;
-  pointer-events: none;
-  user-select: none;
-  opacity: 0.9;
-  transform: translate(-50%, -50%);
-  z-index: 10;
-}
-
 .polaroid-banner {
   width: 100vw;
   margin: 0;
@@ -520,18 +437,40 @@ h2 {
 
         }
 
-/* ================= GET WELL BANNER ================= */
-.get-well-banner {
-  max-width: 560px;
-  margin: 30px auto;
-  padding: 30px 35px;
+/* ================= GET WELL POPUP ================= */
+.get-well-overlay {
+  display: none; /* shown via JS the moment the page loads */
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(120, 20, 60, 0.55);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.get-well-overlay.visible {
+  opacity: 1;
+}
+
+.get-well-modal {
+  max-width: 480px;
+  width: 100%;
+  padding: 35px 30px;
   text-align: center;
-  background: linear-gradient(135deg, rgba(255, 240, 245, 0.95), rgba(255, 214, 230, 0.9));
+  background: linear-gradient(135deg, rgba(255, 240, 245, 0.98), rgba(255, 214, 230, 0.97));
   border: 3px dashed #ff9ec4;
   border-radius: 24px;
-  box-shadow: 0 10px 25px rgba(255, 105, 180, 0.25);
+  box-shadow: 0 20px 45px rgba(255, 105, 180, 0.4);
   color: #c2005f;
-  animation: fadeIn 1s ease forwards;
+  transform: scale(0.85) translateY(10px);
+  transition: transform 0.4s ease;
+}
+
+.get-well-overlay.visible .get-well-modal {
+  transform: scale(1) translateY(0);
 }
 
 .get-well-icons {
@@ -551,7 +490,27 @@ h2 {
   font-size: 1.05em;
   line-height: 1.6em;
   color: #a30055;
-  margin: 10px 0;
+  margin: 10px 0 20px 0;
+}
+
+.get-well-close-btn {
+  border: none;
+  border-radius: 20px;
+  background: #ff69b4;
+  color: #fff;
+  padding: 12px 28px;
+  font-family: 'Comic Sans MS', cursive;
+  font-weight: bold;
+  font-size: 1em;
+  cursor: pointer;
+  margin: 0;
+  box-shadow: 0 4px 10px rgba(255, 105, 180, 0.4);
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.get-well-close-btn:hover {
+  background: #d60076;
+  transform: scale(1.05);
 }
 
 /* ================= RECOVERY WISHLIST ================= */
@@ -668,6 +627,10 @@ h2 {
 }
 
 /* ================= DOODLE CANVAS ================= */
+#doodle {
+  padding-top: 100px; /* clears the fixed navbar since this section is now first on the page */
+}
+
 .doodle-subtitle {
   text-align: center;
   color: #ffffff;
@@ -719,7 +682,47 @@ h2 {
   margin: 0 4px;
 }
 
-.doodle-brush-btn,
+.doodle-size-slider {
+  width: 130px;
+  height: 6px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #ffd6e8, #ff69b4);
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.doodle-size-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid #ff69b4;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(255, 105, 180, 0.4);
+}
+
+.doodle-size-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid #ff69b4;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(255, 105, 180, 0.4);
+}
+
+.doodle-size-value {
+  font-size: 0.9em;
+  color: #d60076;
+  font-weight: bold;
+  min-width: 34px;
+  text-align: left;
+}
+
 .doodle-action-btn {
   border-radius: 14px;
   border: 2px solid #ffb6c1;
@@ -733,15 +736,8 @@ h2 {
   transition: all 0.2s ease;
 }
 
-.doodle-brush-btn:hover,
 .doodle-action-btn:hover {
   background: #ffe4ef;
-}
-
-.doodle-brush-btn.active-brush {
-  background: #ff69b4;
-  color: #fff;
-  border-color: #ff69b4;
 }
 
 .doodle-canvas-wrapper {
