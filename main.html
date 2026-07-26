@@ -7,17 +7,54 @@
 </head>
 <body>
 
+  <div id="getWellOverlay" class="get-well-overlay">
+    <div class="get-well-modal">
+      <div class="get-well-icons">🌷 🩹 💗 🩹 🌷</div>
+      <h2 class="get-well-title">get well soon, my love</h2>
+      <p class="get-well-message">
+        take all the time you need to rest, okay? drink water, sleep lots, and let yourself be lazy for a bit.
+        i know you're strong and you'll be back to your normal bubbly self before we know it. i'm right here
+        cheering you on the whole way, sending you all my hugs and kisses until you feel 100% better. 💗🩹
+      </p>
+      <div class="get-well-icons">✨ 🍵 🧸 🍵 ✨</div>
+      <button type="button" class="get-well-close-btn" onclick="closeGetWellOverlay()">close 💗</button>
+    </div>
+  </div>
+
   <nav class="fun-navbar">
     <ul>
-      <li><a href="#getwell">🌸 get well</a></li>
-      <li><a href="#lovejar">☁ jar</a></li>
-      <li><a href="#secret">✧ ???</a></li>
-      <li><a href="#wishlist">📝 wishlist</a></li>
+      <li><a href="#" onclick="showGetWellOverlay(); return false;">🌸 get well</a></li>
       <li><a href="#doodle">🎨 doodle</a></li>
+      <li><a href="#wishlist">📝 wishlist</a></li>
       <li><a href="#polaroids">✿ polaroids</a></li>
       <li><a href="#unsent">♡ unsent</a></li>
     </ul>
   </nav>
+
+<section id="doodle">
+  <h2>doodle together 🎨</h2>
+  <p class="doodle-subtitle">draw how you're feeling, or let's scribble something silly together!</p>
+  <div class="doodle-container">
+    <div class="doodle-toolbar">
+      <label class="doodle-tool-label" for="doodleColor">color:</label>
+      <input type="color" id="doodleColor" value="#ff69b4">
+
+      <span class="doodle-divider"></span>
+
+      <label class="doodle-tool-label" for="brushSizeSlider">brush size:</label>
+      <input type="range" id="brushSizeSlider" class="doodle-size-slider" min="2" max="30" value="4" oninput="updateBrushSize(this.value)">
+      <span id="brushSizeValue" class="doodle-size-value">4px</span>
+
+      <span class="doodle-divider"></span>
+
+      <button type="button" class="doodle-action-btn" onclick="clearDoodle()">clear ❌</button>
+      <button type="button" class="doodle-action-btn" onclick="saveDoodle()">save 💾</button>
+    </div>
+    <div class="doodle-canvas-wrapper">
+      <canvas id="doodleCanvas" width="600" height="400"></canvas>
+    </div>
+  </div>
+</section>
 
     <div class="envelope-container">
     <img id="letter" src="letter.png" alt="Letter" onclick="openLetter()">
@@ -29,19 +66,6 @@
     <p>i used up all of my prep time for this lol. BUT DONT WORRY MY ASSIGNMENTS ARE DONE! but the updates are small that inteded whoops, I WILL TRY TO UPDATE IT TOMMROROW IF CAN</p>
   </div>
 
-  <section id="getwell">
-    <div class="get-well-banner">
-      <div class="get-well-icons">🌷 🩹 💗 🩹 🌷</div>
-      <h2 class="get-well-title">get well soon, my love</h2>
-      <p class="get-well-message">
-        take all the time you need to rest, okay? drink water, sleep lots, and let yourself be lazy for a bit.
-        i know you're strong and you'll be back to your normal bubbly self before we know it. i'm right here
-        cheering you on the whole way, sending you all my hugs and kisses until you feel 100% better. 💗🩹
-      </p>
-      <div class="get-well-icons">✨ 🍵 🧸 🍵 ✨</div>
-    </div>
-  </section>
-
   <h2>aquarium !! 🦈</h2>
   <div id="aquarium"></div>
 <div id="fish-label"></div>
@@ -50,30 +74,6 @@
 <div class="countdown-box">
   <span id="countdown"></span>
 </div>
-
-<section id="lovejar">
-<div class="love-jar-container">
-  <h2>love jar 💌 *more to come</h2>
-  <img src="jar.png" alt="Love Jar" class="jar-image">
-  <ul class="love-list">
-    <li><stike>bday gift 2025</stike></li>
-    <li><stike>cookies</stike></li>
-    <li><stike>snacks</stike></li>
-    <li><stike>keychains</stike></li>
-  </ul>
-</div>
-</section>
-
-<section id="secret">
-<h2>scratch to reveal!</h2>
-<div class="scratch-container">
-  <div class="scratch-area">
-    <div id="hiddenMessage">ur roblox game comes out in the middle of september!</div>
-    <canvas id="scratchCanvas"></canvas>
-    <img id="coin" src="coin.png" alt="coin">
-  </div>
-</div>
-</section>
 
 <section id="wishlist">
   <h2>recovery wishlist 🎀</h2>
@@ -110,31 +110,6 @@
 </div>
 
     </div>
-
-<section id="doodle">
-  <h2>doodle together 🎨</h2>
-  <p class="doodle-subtitle">draw how you're feeling, or let's scribble something silly together!</p>
-  <div class="doodle-container">
-    <div class="doodle-toolbar">
-      <label class="doodle-tool-label" for="doodleColor">color:</label>
-      <input type="color" id="doodleColor" value="#ff69b4">
-
-      <span class="doodle-divider"></span>
-
-      <span class="doodle-tool-label">brush:</span>
-      <button type="button" id="brushThinBtn" class="doodle-brush-btn active-brush" onclick="setBrushSize('thin')">thin ✏️</button>
-      <button type="button" id="brushThickBtn" class="doodle-brush-btn" onclick="setBrushSize('thick')">thick 🖌️</button>
-
-      <span class="doodle-divider"></span>
-
-      <button type="button" class="doodle-action-btn" onclick="clearDoodle()">clear ❌</button>
-      <button type="button" class="doodle-action-btn" onclick="saveDoodle()">save 💾</button>
-    </div>
-    <div class="doodle-canvas-wrapper">
-      <canvas id="doodleCanvas" width="600" height="400"></canvas>
-    </div>
-  </div>
-</section>
 
 <section id="polaroids">
 <div class="polaroid-banner">
