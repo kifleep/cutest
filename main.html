@@ -330,6 +330,45 @@
   <p>will not be updated for a while to give room for "LABRATORY-028:PROJECT DARLING' development *SORRY! </p>
 </footer>
 
+  <!--
+    Firebase powers the LIVE + PERSISTENT doodle canvas above.
+    Setup (takes about 5 minutes, totally free):
+      1. Go to https://console.firebase.google.com and create a project (any name).
+      2. In the project, click the "</>" (web app) icon to register a web app.
+         You don't need Hosting — just registering the app is enough.
+      3. Firebase will show you a firebaseConfig object. Copy it and paste it below,
+         replacing the placeholder values.
+      4. In the left sidebar go to Build > Realtime Database > Create Database.
+         Pick any region, and start in "test mode" (so it works right away).
+      5. Push these files to GitHub — the canvas will now sync live between anyone
+         who has the page open, and the drawing will persist across visits/devices.
+    If you skip this, the doodle canvas still works fine locally, it just won't be
+    live or saved between visits.
+  -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDs1izb7NDXTrYryJAEQoi9TKxaI-u8mh8",
+      authDomain: "zaraaaliyah-bd143.firebaseapp.com",
+      databaseURL: "https://zaraaaliyah-bd143-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "zaraaaliyah-bd143",
+      storageBucket: "zaraaaliyah-bd143.firebasestorage.app",
+      messagingSenderId: "105079943484",
+      appId: "1:105079943484:web:4935a0211d59f720a42e39"
+    };
+
+    try {
+      // Only initialize if the config actually looks filled in — avoids console errors
+      // for anyone who hasn't set up Firebase yet.
+      if (firebaseConfig.apiKey !== "AIzaSyDs1izb7NDXTrYryJAEQoi9TKxaI-u8mh8") {
+        firebase.initializeApp(firebaseConfig);
+      }
+    } catch (err) {
+      console.warn("Firebase failed to initialize:", err);
+    }
+  </script>
+
   <script src="script.js"></script>
 </body>
 </html>
