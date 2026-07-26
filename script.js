@@ -1,4 +1,16 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // The update-announcement popup on index.html (separate from the get-well popup below)
+  const closeBtn = document.getElementById("closeWelcome");
+  const welcomeOverlay = document.getElementById("welcomeOverlay");
+
+  if (closeBtn && welcomeOverlay) {
+    closeBtn.addEventListener("click", () => {
+      welcomeOverlay.style.opacity = "0";
+      welcomeOverlay.style.pointerEvents = "none";
+      setTimeout(() => welcomeOverlay.remove(), 500); // remove after fade out
+    });
+  }
+
   // Initialize the new features once the DOM is ready
   initWishlist();
   initDoodleCanvas();
