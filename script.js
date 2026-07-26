@@ -1,19 +1,36 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const closeBtn = document.getElementById("closeWelcome");
-  const overlay = document.getElementById("welcomeOverlay");
-
-  if (closeBtn && overlay) {
-    closeBtn.addEventListener("click", () => {
-      overlay.style.opacity = "0";
-      overlay.style.pointerEvents = "none";
-      setTimeout(() => overlay.remove(), 500); // remove after fade out
-    });
-  }
-
   // Initialize the new features once the DOM is ready
   initWishlist();
   initDoodleCanvas();
 });
+
+/* ======================================================
+   GET WELL SOON POPUP
+   Shows automatically the moment the site loads. Can also be
+   reopened any time via the "get well" nav link.
+   ====================================================== */
+
+function showGetWellOverlay() {
+  const overlay = document.getElementById("getWellOverlay");
+  if (!overlay) return;
+  overlay.style.display = "flex";
+  // Trigger the fade/scale-in transition (needs a tick so the display change registers first)
+  requestAnimationFrame(() => {
+    overlay.classList.add("visible");
+  });
+}
+
+function closeGetWellOverlay() {
+  const overlay = document.getElementById("getWellOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  setTimeout(() => {
+    overlay.style.display = "none";
+  }, 400); // matches the CSS transition duration
+}
+
+// Show it as soon as the page loads
+showGetWellOverlay();
 
 function checkPassword() {
   const correctPassword = "Zara";
@@ -167,66 +184,6 @@ window.addEventListener('scroll', () => {
   plushie.style.top = `${scrollRatio * maxPlushieMove}px`;
 });
 
-const canvas = document.getElementById('scratchCanvas');
-const ctx = canvas.getContext('2d');
-const coin = document.getElementById('coin');
-const message = document.getElementById('hiddenMessage');
-
-let isDrawing = false;
-
-// Fill canvas with gray overlay
-function setupCanvas() {
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.fillStyle = '#C0C0C0';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-}
-
-setupCanvas();
-
-// Events
-canvas.addEventListener('mousedown', () => isDrawing = true);
-canvas.addEventListener('mouseup', () => {
-  isDrawing = false;
-  checkReveal();
-});
-canvas.addEventListener('mouseleave', () => {
-  isDrawing = false;
-  coin.style.display = 'none';
-});
-canvas.addEventListener('mouseenter', () => {
-  coin.style.display = 'block';
-});
-canvas.addEventListener('mousemove', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
-  // Move coin to follow cursor inside canvas
-  coin.style.left = `${e.clientX}px`;
-  coin.style.top = `${e.clientY}px`;
-
-  if (isDrawing) {
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.beginPath();
-    ctx.arc(x, y, 15, 0, Math.PI * 2, false);
-    ctx.fill();
-  }
-});
-
-function checkReveal() {
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  let transparentPixels = 0;
-  for (let i = 0; i < imageData.data.length; i += 4) {
-    if (imageData.data[i + 3] === 0) transparentPixels++;
-  }
-
-  const percent = transparentPixels / (canvas.width * canvas.height) * 100;
-
-  if (percent > 50) {
-    message.style.opacity = 1;
-  }
-}
-
 const music = document.getElementById('bgMusic');
 const cover = document.getElementById('albumCover');
 const icon = document.getElementById('musicState');
@@ -318,31 +275,48 @@ const aquarium = document.getElementById('aquarium');
 
   // Spawn every 2 seconds
   setInterval(spawnFish, 500);
-document.getElementById("start-camera").addEventListener("click", async () => {
-    const video = document.getElementById("camera");
+const startCameraBtn = document.getElementById("start-camera");
+if (startCameraBtn) {
+  startCameraBtn.addEventListener("click", async () => {
+    // This was previously grabbing the wrapper <div id="camera">, not the actual
+    // <video id="video"> element inside it — divs don't have .play()/.srcObject,
+    // so the camera silently failed. Fixed to grab the video element directly.
+    const video = document.getElementById("video");
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("Camera access isn't available. This usually means the page isn't loaded over HTTPS, or your browser doesn't support camera access. Make sure you're viewing the site via https:// (not http://).");
+      return;
+    }
 
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-                facingMode: "user"
-            },
-            audio: false
-        });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: "user"
+        },
+        audio: false
+      });
 
-        // Assign stream to video
-        video.srcObject = stream;
-        await video.play();
+      // Assign stream to video
+      video.srcObject = stream;
+      await video.play();
 
-        // Hide the start button after enabling
-        document.getElementById("start-camera").style.display = "none";
+      // Hide the start button after enabling
+      startCameraBtn.style.display = "none";
 
     } catch (err) {
+      console.error("Camera error:", err);
+      if (err.name === "NotAllowedError") {
+        alert("Camera access was denied. Check your browser's site settings and allow camera access for this page, then try again.");
+      } else if (err.name === "NotFoundError") {
+        alert("No camera was found on this device.");
+      } else {
         alert("Camera access denied or unavailable.");
-        console.error("Camera error:", err);
+      }
     }
-});
+  });
+}
 
     const bouquetContainer = document.getElementById("bouquetContainer");
     let flowers = [];
@@ -494,9 +468,7 @@ let doodleCanvasEl = null;
 let doodleDrawing = false;
 let doodleLastX = 0; // normalized 0-1, so it lines up across different screen sizes
 let doodleLastY = 0;
-let doodleBrushSize = 4;   // thin by default
-const DOODLE_THIN = 4;
-const DOODLE_THICK = 14;
+let doodleBrushSize = 4;   // matches the slider's default value in main.html
 
 // Firebase refs — only get set up if firebaseConfig has been filled in (see main.html)
 let doodleFirebaseReady = false;
@@ -677,19 +649,10 @@ function redrawAllDoodleStrokes() {
   }).catch((err) => console.warn("Couldn't reload saved doodle strokes:", err));
 }
 
-function setBrushSize(size) {
-  const thinBtn = document.getElementById("brushThinBtn");
-  const thickBtn = document.getElementById("brushThickBtn");
-
-  if (size === "thick") {
-    doodleBrushSize = DOODLE_THICK;
-    if (thickBtn) thickBtn.classList.add("active-brush");
-    if (thinBtn) thinBtn.classList.remove("active-brush");
-  } else {
-    doodleBrushSize = DOODLE_THIN;
-    if (thinBtn) thinBtn.classList.add("active-brush");
-    if (thickBtn) thickBtn.classList.remove("active-brush");
-  }
+function updateBrushSize(value) {
+  doodleBrushSize = parseInt(value, 10) || 4;
+  const label = document.getElementById("brushSizeValue");
+  if (label) label.textContent = `${doodleBrushSize}px`;
 }
 
 function clearDoodle() {
