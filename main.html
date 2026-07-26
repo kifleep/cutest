@@ -359,11 +359,7 @@
     };
 
     try {
-      // Only initialize if the config actually looks filled in — avoids console errors
-      // for anyone who hasn't set up Firebase yet.
-      if (firebaseConfig.apiKey !== "AIzaSyDs1izb7NDXTrYryJAEQoi9TKxaI-u8mh8") {
-        firebase.initializeApp(firebaseConfig);
-      }
+      firebase.initializeApp(firebaseConfig);
     } catch (err) {
       console.warn("Firebase failed to initialize:", err);
     }
