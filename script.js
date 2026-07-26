@@ -486,67 +486,88 @@ function removeWishlistItem(index) {
 }
 
 /* ======================================================
-   LIVE INTERACTIVE DOODLE CANVAS
+   LIVE + PERSISTENT DOODLE CANVAS (synced via Firebase)
    ====================================================== */
 
 let doodleCtx = null;
+let doodleCanvasEl = null;
 let doodleDrawing = false;
-let doodleLastX = 0;
+let doodleLastX = 0; // normalized 0-1, so it lines up across different screen sizes
 let doodleLastY = 0;
 let doodleBrushSize = 4;   // thin by default
 const DOODLE_THIN = 4;
 const DOODLE_THICK = 14;
 
+// Firebase refs — only get set up if firebaseConfig has been filled in (see main.html)
+let doodleFirebaseReady = false;
+let doodleStrokesRef = null;
+let doodleClearedRef = null;
+
+function tryInitDoodleFirebase() {
+  try {
+    if (typeof firebase !== "undefined" && firebase.apps && firebase.apps.length > 0) {
+      doodleStrokesRef = firebase.database().ref("doodle/strokes");
+      doodleClearedRef = firebase.database().ref("doodle/clearedAt");
+      doodleFirebaseReady = true;
+    } else {
+      console.warn("Firebase isn't configured yet — doodle canvas will only work locally (not live/saved). See main.html for setup.");
+    }
+  } catch (err) {
+    console.warn("Firebase init failed — doodle canvas will only work locally:", err);
+    doodleFirebaseReady = false;
+  }
+}
+
 function initDoodleCanvas() {
-  const canvasEl = document.getElementById("doodleCanvas");
-  if (!canvasEl) return; // section not on this page
+  doodleCanvasEl = document.getElementById("doodleCanvas");
+  if (!doodleCanvasEl) return; // section not on this page
 
-  doodleCtx = canvasEl.getContext("2d");
-
-  // Start with a white background so saved/downloaded images aren't transparent
-  doodleCtx.fillStyle = "#ffffff";
-  doodleCtx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+  doodleCtx = doodleCanvasEl.getContext("2d");
   doodleCtx.lineCap = "round";
   doodleCtx.lineJoin = "round";
 
-  // Keep the internal drawing resolution matched to how large the canvas is shown,
+  tryInitDoodleFirebase();
+
+  // Match the canvas's internal resolution to how large it's actually shown,
   // so drawing lines up correctly with the cursor/finger on all screen sizes.
   function resizeDoodleCanvas() {
-    const rect = canvasEl.getBoundingClientRect();
+    const rect = doodleCanvasEl.getBoundingClientRect();
     const ratio = window.devicePixelRatio || 1;
 
-    // Preserve existing artwork when resizing
-    const prevDrawing = canvasEl.toDataURL();
-
-    canvasEl.width = rect.width * ratio;
-    canvasEl.height = rect.height * ratio;
+    doodleCanvasEl.width = rect.width * ratio;
+    doodleCanvasEl.height = rect.height * ratio;
+    doodleCtx.setTransform(1, 0, 0, 1, 0, 0);
     doodleCtx.scale(ratio, ratio);
-    doodleCtx.fillStyle = "#ffffff";
-    doodleCtx.fillRect(0, 0, rect.width, rect.height);
     doodleCtx.lineCap = "round";
     doodleCtx.lineJoin = "round";
 
-    const img = new Image();
-    img.onload = () => {
-      doodleCtx.drawImage(img, 0, 0, rect.width, rect.height);
-    };
-    img.src = prevDrawing;
+    // Coordinates are stored normalized (0-1), so just replay everything at the new size
+    redrawAllDoodleStrokes();
   }
 
   resizeDoodleCanvas();
-  window.addEventListener("resize", resizeDoodleCanvas);
 
+  let resizeTimeout;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(resizeDoodleCanvas, 150);
+  });
+
+  // Returns a position as a 0-1 fraction of the canvas's displayed size,
+  // so strokes line up correctly no matter what size screen they're drawn/viewed on.
   function getPointerPos(evt) {
-    const rect = canvasEl.getBoundingClientRect();
+    const rect = doodleCanvasEl.getBoundingClientRect();
+    let clientX, clientY;
     if (evt.touches && evt.touches.length > 0) {
-      return {
-        x: evt.touches[0].clientX - rect.left,
-        y: evt.touches[0].clientY - rect.top
-      };
+      clientX = evt.touches[0].clientX;
+      clientY = evt.touches[0].clientY;
+    } else {
+      clientX = evt.clientX;
+      clientY = evt.clientY;
     }
     return {
-      x: evt.clientX - rect.left,
-      y: evt.clientY - rect.top
+      x: (clientX - rect.left) / rect.width,
+      y: (clientY - rect.top) / rect.height
     };
   }
 
@@ -566,32 +587,94 @@ function initDoodleCanvas() {
     const colorInput = document.getElementById("doodleColor");
     const color = colorInput ? colorInput.value : "#ff69b4";
 
-    doodleCtx.strokeStyle = color;
-    doodleCtx.lineWidth = doodleBrushSize;
-    doodleCtx.beginPath();
-    doodleCtx.moveTo(doodleLastX, doodleLastY);
-    doodleCtx.lineTo(pos.x, pos.y);
-    doodleCtx.stroke();
+    const segment = {
+      x1: doodleLastX, y1: doodleLastY,
+      x2: pos.x, y2: pos.y,
+      color: color,
+      size: doodleBrushSize
+    };
+
+    drawDoodleSegment(segment); // instant local feedback, no waiting on the network
+
+    if (doodleFirebaseReady) {
+      doodleStrokesRef.push(segment); // syncs to everyone else viewing the page right now
+    }
 
     doodleLastX = pos.x;
     doodleLastY = pos.y;
   }
 
-  function stopDrawing(evt) {
+  function stopDrawing() {
     doodleDrawing = false;
   }
 
   // Mouse support
-  canvasEl.addEventListener("mousedown", startDrawing);
-  canvasEl.addEventListener("mousemove", drawMove);
-  canvasEl.addEventListener("mouseup", stopDrawing);
-  canvasEl.addEventListener("mouseleave", stopDrawing);
+  doodleCanvasEl.addEventListener("mousedown", startDrawing);
+  doodleCanvasEl.addEventListener("mousemove", drawMove);
+  doodleCanvasEl.addEventListener("mouseup", stopDrawing);
+  doodleCanvasEl.addEventListener("mouseleave", stopDrawing);
 
   // Touch support (mobile / tablets) — passive:false lets us preventDefault to block scrolling
-  canvasEl.addEventListener("touchstart", startDrawing, { passive: false });
-  canvasEl.addEventListener("touchmove", drawMove, { passive: false });
-  canvasEl.addEventListener("touchend", stopDrawing, { passive: false });
-  canvasEl.addEventListener("touchcancel", stopDrawing, { passive: false });
+  doodleCanvasEl.addEventListener("touchstart", startDrawing, { passive: false });
+  doodleCanvasEl.addEventListener("touchmove", drawMove, { passive: false });
+  doodleCanvasEl.addEventListener("touchend", stopDrawing, { passive: false });
+  doodleCanvasEl.addEventListener("touchcancel", stopDrawing, { passive: false });
+
+  if (doodleFirebaseReady) {
+    // Fires once for every stroke already saved (this is what makes the drawing persist
+    // across visits/devices), then again in real time for every new stroke anyone adds.
+    doodleStrokesRef.on("child_added", (snapshot) => {
+      drawDoodleSegment(snapshot.val());
+    });
+
+    // Whenever anyone hits "clear", this value changes and every open tab wipes its canvas.
+    // We skip the very first firing since that's just the current state on page load, not a
+    // fresh clear action — the canvas is already blank at that point.
+    let skipFirstClearEvent = true;
+    doodleClearedRef.on("value", () => {
+      if (skipFirstClearEvent) {
+        skipFirstClearEvent = false;
+        return;
+      }
+      hardClearDoodleCanvas();
+    });
+  }
+}
+
+// Draws one line segment given normalized (0-1) coordinates, scaled to the canvas's current display size
+function drawDoodleSegment(segment) {
+  if (!doodleCtx || !doodleCanvasEl) return;
+  const rect = doodleCanvasEl.getBoundingClientRect();
+
+  doodleCtx.strokeStyle = segment.color;
+  doodleCtx.lineWidth = segment.size;
+  doodleCtx.beginPath();
+  doodleCtx.moveTo(segment.x1 * rect.width, segment.y1 * rect.height);
+  doodleCtx.lineTo(segment.x2 * rect.width, segment.y2 * rect.height);
+  doodleCtx.stroke();
+}
+
+// Wipes the local canvas bitmap only (doesn't touch the database)
+function hardClearDoodleCanvas() {
+  if (!doodleCtx || !doodleCanvasEl) return;
+  const rect = doodleCanvasEl.getBoundingClientRect();
+  doodleCtx.clearRect(0, 0, rect.width, rect.height);
+  doodleCtx.fillStyle = "#ffffff";
+  doodleCtx.fillRect(0, 0, rect.width, rect.height);
+}
+
+// Re-fetches every saved stroke and redraws them (used after a resize, since coordinates
+// are normalized and need to be re-scaled to the new canvas size)
+function redrawAllDoodleStrokes() {
+  hardClearDoodleCanvas();
+  if (!doodleFirebaseReady) return;
+
+  doodleStrokesRef.once("value").then((snapshot) => {
+    snapshot.forEach((child) => {
+      drawDoodleSegment(child.val());
+      return false; // keep iterating
+    });
+  }).catch((err) => console.warn("Couldn't reload saved doodle strokes:", err));
 }
 
 function setBrushSize(size) {
@@ -610,24 +693,23 @@ function setBrushSize(size) {
 }
 
 function clearDoodle() {
-  const canvasEl = document.getElementById("doodleCanvas");
-  if (!canvasEl || !doodleCtx) return;
+  if (!doodleCanvasEl || !doodleCtx) return;
 
-  const rect = canvasEl.getBoundingClientRect();
-  const ratio = window.devicePixelRatio || 1;
-
-  doodleCtx.setTransform(1, 0, 0, 1, 0, 0);
-  doodleCtx.scale(ratio, ratio);
-  doodleCtx.fillStyle = "#ffffff";
-  doodleCtx.fillRect(0, 0, rect.width, rect.height);
+  if (doodleFirebaseReady) {
+    if (!confirm("Clear the doodle for both of you? This can't be undone.")) return;
+    // Removing the strokes + updating clearedAt tells every open tab (including this one) to wipe its canvas
+    doodleStrokesRef.remove();
+    doodleClearedRef.set(Date.now());
+  } else {
+    hardClearDoodleCanvas();
+  }
 }
 
 function saveDoodle() {
-  const canvasEl = document.getElementById("doodleCanvas");
-  if (!canvasEl) return;
+  if (!doodleCanvasEl) return;
 
   const link = document.createElement("a");
   link.download = "our-doodle.png";
-  link.href = canvasEl.toDataURL("image/png");
+  link.href = doodleCanvasEl.toDataURL("image/png");
   link.click();
 }
