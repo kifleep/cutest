@@ -158,56 +158,60 @@ const plushie = document.getElementById('plushieThumb');
 let isDragging = false;
 let startY, startScroll;
 
-plushie.addEventListener('mousedown', (e) => {
-  isDragging = true;
-  startY = e.clientY;
-  startScroll = window.scrollY;
-  plushie.style.cursor = 'grabbing';
-});
+if (plushie) {
+  plushie.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    startY = e.clientY;
+    startScroll = window.scrollY;
+    plushie.style.cursor = 'grabbing';
+  });
 
-document.addEventListener('mouseup', () => {
-  isDragging = false;
-  plushie.style.cursor = 'grab';
-});
+  document.addEventListener('mouseup', () => {
+    isDragging = false;
+    plushie.style.cursor = 'grab';
+  });
 
-document.addEventListener('mousemove', (e) => {
-  if (isDragging) {
-    const delta = e.clientY - startY;
-    window.scrollTo(0, startScroll + delta * 2); // Adjust scroll speed
-  }
-});
+  document.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+      const delta = e.clientY - startY;
+      window.scrollTo(0, startScroll + delta * 2); // Adjust scroll speed
+    }
+  });
 
-// Sync plushie with page scroll
-window.addEventListener('scroll', () => {
-  const scrollRatio = window.scrollY / (document.body.scrollHeight - window.innerHeight);
-  const maxPlushieMove = window.innerHeight - plushie.offsetHeight;
-  plushie.style.top = `${scrollRatio * maxPlushieMove}px`;
-});
+  // Sync plushie with page scroll
+  window.addEventListener('scroll', () => {
+    const scrollRatio = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+    const maxPlushieMove = window.innerHeight - plushie.offsetHeight;
+    plushie.style.top = `${scrollRatio * maxPlushieMove}px`;
+  });
+}
 
 const music = document.getElementById('bgMusic');
 const cover = document.getElementById('albumCover');
 const icon = document.getElementById('musicState');
 const widget = document.getElementById('musicWidget');
 
-// Allow autoplay if user interacts
-window.addEventListener("click", () => {
-  if (music.paused) {
-    music.play();
-  }
-}, { once: true });
+if (music && widget) {
+  // Allow autoplay if user interacts
+  window.addEventListener("click", () => {
+    if (music.paused) {
+      music.play();
+    }
+  }, { once: true });
 
-// Toggle music on widget click
-widget.addEventListener('click', () => {
-  if (music.paused) {
-    music.play();
-    widget.classList.remove('music-paused');
-    icon.textContent = '||';
-  } else {
-    music.pause();
-    widget.classList.add('music-paused');
-    icon.textContent = '▶';
-  }
-});
+  // Toggle music on widget click
+  widget.addEventListener('click', () => {
+    if (music.paused) {
+      music.play();
+      widget.classList.remove('music-paused');
+      if (icon) icon.textContent = '||';
+    } else {
+      music.pause();
+      widget.classList.add('music-paused');
+      if (icon) icon.textContent = '▶';
+    }
+  });
+}
 
 const aquarium = document.getElementById('aquarium');
 
@@ -274,7 +278,9 @@ const aquarium = document.getElementById('aquarium');
   }
 
   // Spawn every 2 seconds
-  setInterval(spawnFish, 500);
+  if (aquarium) {
+    setInterval(spawnFish, 500);
+  }
 const startCameraBtn = document.getElementById("start-camera");
 if (startCameraBtn) {
   startCameraBtn.addEventListener("click", async () => {
