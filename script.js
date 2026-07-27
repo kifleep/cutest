@@ -392,11 +392,11 @@ if (startCameraBtn) {
 
 // Default starter ideas — feel free to edit this list
 let wishlistItems = [
-  { text: "cozy movie marathon with all the snacks", checked: false },
-  { text: "picnic date at the park", checked: false },
-  { text: "go get matching bubble teas", checked: false },
-  { text: "amusement park day", checked: false },
-  { text: "bake cookies together", checked: false }
+  { text: "watch movie together", checked: false },
+  { text: "adopt me 100% ofc", checked: false },
+  { text: "buy foods during yic", checked: false },
+  { text: "do more drawingss", checked: false },
+  { text: "paint my bass pick hehe", checked: false }
 ];
 
 function initWishlist() {
