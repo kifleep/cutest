@@ -85,6 +85,7 @@
     <p id="lightboxCaption" class="lightbox-caption"></p>
     <div class="lightbox-actions">
       <button type="button" class="doodle-action-btn" onclick="downloadLightboxImage()">download 💾</button>
+      <button type="button" class="doodle-action-btn" onclick="deleteLightboxImage()">delete 🗑️</button>
       <button type="button" class="doodle-action-btn" onclick="closeDoodleLightbox()">close ✖</button>
     </div>
   </div>
@@ -94,17 +95,14 @@
   <div id="aquarium"></div>
 <div id="fish-label"></div>
 
-  <h2>BIRTHDAY ALERT</h2>
-<div class="countdown-box">
-  <span id="countdown"></span>
-</div>
-
 <section id="seaAngelPet">
   <h2>raise our sea angel 👼🌊</h2>
   <p class="doodle-subtitle">pet it, feed it, and watch it react &mdash; it can never die, so don't stress!</p>
   <div class="sea-angel-layout">
     <div class="sea-angel-pet-container">
-      <img src="sea-angel.png" id="seaAngelMoodImg" class="sea-angel-mood happy" alt="Sea Angel">
+      <div class="sea-angel-drop-zone" id="seaAngelDropZone">
+        <img src="sea-angel.png" id="seaAngelMoodImg" class="sea-angel-mood happy" alt="Sea Angel">
+      </div>
       <div id="seaAngelStats" class="sea-angel-stats">
         <div class="sea-angel-stat-row">
           <span>happiness</span>
@@ -115,9 +113,9 @@
           <div class="sea-angel-bar-track"><div id="seaAngelFullnessBar" class="sea-angel-bar-fill fullness"></div></div>
         </div>
       </div>
-      <div class="sea-angel-buttons">
-        <button type="button" class="doodle-action-btn" onclick="petSeaAngel()">pet 🖐️</button>
-        <button type="button" class="doodle-action-btn" onclick="feedSeaAngel()">feed 🍤</button>
+      <p class="sea-angel-hint">tap the sea angel to pet it &mdash; drag the octopus onto it to feed it!</p>
+      <div class="sea-angel-food-row">
+        <img src="octopus.png" id="seaAngelFood" class="sea-angel-food" alt="Octopus snack">
       </div>
     </div>
     <div class="side-feed-panel">
@@ -142,15 +140,22 @@
 </section>
 
 <h2>florist heaven 🌻</h2>
-    <div class="controls">
-    <button onclick="addFlower('rose.png')">Add Rose 🌹</button>
-    <button onclick="addFlower('tulip.png')">Add Tulip 🌷</button>
-    <button onclick="addFlower('daisy.png')">Add Daisy 🌼</button>
-    <button onclick="clearBouquet()">Clear Bouquet ❌</button>
-</div>
+<p class="doodle-subtitle">drag a flower onto the paper to build our bouquet together, live!</p>
+<div class="florist-container">
+  <div class="florist-flower-tray">
+    <img src="rose.png" class="florist-flower-chip" data-flower="rose.png" alt="Rose">
+    <img src="tulip.png" class="florist-flower-chip" data-flower="tulip.png" alt="Tulip">
+    <img src="daisy.png" class="florist-flower-chip" data-flower="daisy.png" alt="Daisy">
+  </div>
 
-<div class="bouquet" id="bouquetContainer">
-    <img src="bouquetPaper.png" class="bouquet-paper" alt="Bouquet Paper">
+  <div class="bouquet" id="bouquetContainer">
+      <img src="bouquetPaper.png" class="bouquet-paper" alt="Bouquet Paper">
+  </div>
+
+  <div class="florist-actions">
+    <button type="button" class="doodle-action-btn" onclick="clearBouquet()">clear bouquet ❌</button>
+    <button type="button" class="doodle-action-btn" onclick="saveBouquetImage()">save bouquet 💾</button>
+  </div>
 </div>
 
 <section id="blindbag">
@@ -166,7 +171,13 @@
         <button type="button" class="doodle-action-btn blindbag-tab" id="blindBagTab-sylvanian" onclick="switchBlindBagTab('sylvanian')">Sylvanian Families</button>
       </div>
 
-      <button type="button" class="doodle-action-btn blindbag-unbox-btn" id="blindBagUnboxBtn" onclick="unboxBlindBag(currentBlindBagTab)">unbox a Smiski 🎁</button>
+      <div class="blindbag-shake-wrap">
+        <img src="blindbag.png" id="blindBagPlaceholder" class="blindbag-placeholder" alt="Blind bag — tap repeatedly to shake it open!">
+        <p class="blindbag-hint">tap the bag again and again to shake it open!</p>
+        <div class="blindbag-shake-meter-track">
+          <div id="blindBagShakeMeterFill" class="blindbag-shake-meter-fill"></div>
+        </div>
+      </div>
 
       <div id="blindBagGrid-smiski" class="blindbag-grid"></div>
       <div id="blindBagGrid-sylvanian" class="blindbag-grid" style="display: none;"></div>
@@ -393,7 +404,11 @@
 </form>
 
 <footer class="site-footer">
-  <p>will not be updated for a while to give room for "LABRATORY-028:PROJECT DARLING' development *SORRY! </p>
+  <div class="footer-countdown">
+    <p class="footer-countdown-label">🎉 birthday countdown 🎉</p>
+    <div class="countdown-box footer-countdown-box"><span id="countdown"></span></div>
+  </div>
+  <p class="footer-note">will not be updated for a while to give room for "LABRATORY-028:PROJECT DARLING' development *SORRY! </p>
 </footer>
 
   <!--
@@ -415,6 +430,7 @@
   -->
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDs1izb7NDXTrYryJAEQoi9TKxaI-u8mh8",
