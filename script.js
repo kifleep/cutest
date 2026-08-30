@@ -11,14 +11,79 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Initialize the new features once the DOM is ready
-  initWishlist();
-  initDoodleCanvas();
+  // Everything else waits behind the name gate — see initNameGate() below.
+  initNameGate();
 });
 
 /* ======================================================
+   NAME ENTRY GATE
+   Shown once per browser. The name is saved to localStorage
+   and used to label chat messages, doodle gallery entries,
+   sea angel actions, and blind bag unboxings.
+   ====================================================== */
+
+let currentUserName = null;
+
+function initNameGate() {
+  const saved = localStorage.getItem("siteUserName");
+  const overlay = document.getElementById("nameOverlay");
+
+  if (saved) {
+    currentUserName = saved;
+    if (overlay) overlay.style.display = "none";
+    onNameReady();
+  } else if (overlay) {
+    overlay.style.display = "flex";
+    const input = document.getElementById("nameInput");
+    if (input) {
+      input.focus();
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          saveUserName();
+        }
+      });
+    }
+  } else {
+    // No name overlay on this page — just proceed.
+    onNameReady();
+  }
+}
+
+function saveUserName() {
+  const input = document.getElementById("nameInput");
+  if (!input) return;
+  const value = input.value.trim();
+  if (!value) return;
+
+  localStorage.setItem("siteUserName", value);
+  currentUserName = value;
+
+  const overlay = document.getElementById("nameOverlay");
+  if (overlay) overlay.style.display = "none";
+
+  onNameReady();
+}
+
+// Runs once we know who's visiting — kicks off every feature that was
+// previously fired unconditionally on DOMContentLoaded.
+function onNameReady() {
+  showGetWellOverlay();
+  initWishlist();
+  initDoodleCanvas();
+  initDoodleGallery();
+  initChat();
+  initSeaAngel();
+  initBlindBag();
+}
+
+function isFirebaseReady() {
+  return typeof firebase !== "undefined" && firebase.apps && firebase.apps.length > 0;
+}
+
+/* ======================================================
    GET WELL SOON POPUP
-   Shows automatically the moment the site loads. Can also be
+   Shows automatically once a name has been entered. Can also be
    reopened any time via the "get well" nav link.
    ====================================================== */
 
@@ -40,9 +105,6 @@ function closeGetWellOverlay() {
     overlay.style.display = "none";
   }, 400); // matches the CSS transition duration
 }
-
-// Show it as soon as the page loads
-showGetWellOverlay();
 
 function checkPassword() {
   const correctPassword = "Zara";
@@ -487,6 +549,7 @@ let doodleDrawing = false;
 let doodleLastX = 0; // normalized 0-1, so it lines up across different screen sizes
 let doodleLastY = 0;
 let doodleBrushSize = 4;   // matches the slider's default value in main.html
+let doodleTool = "pen";    // 'pen' or 'eraser'
 
 // Firebase refs — only get set up if firebaseConfig has been filled in (see main.html)
 let doodleFirebaseReady = false;
@@ -495,7 +558,7 @@ let doodleClearedRef = null;
 
 function tryInitDoodleFirebase() {
   try {
-    if (typeof firebase !== "undefined" && firebase.apps && firebase.apps.length > 0) {
+    if (isFirebaseReady()) {
       doodleStrokesRef = firebase.database().ref("doodle/strokes");
       doodleClearedRef = firebase.database().ref("doodle/clearedAt");
       doodleFirebaseReady = true;
@@ -506,6 +569,14 @@ function tryInitDoodleFirebase() {
     console.warn("Firebase init failed — doodle canvas will only work locally:", err);
     doodleFirebaseReady = false;
   }
+}
+
+function setDoodleTool(tool) {
+  doodleTool = tool;
+  const penBtn = document.getElementById("doodlePenBtn");
+  const eraserBtn = document.getElementById("doodleEraserBtn");
+  if (penBtn) penBtn.classList.toggle("active-tool", tool === "pen");
+  if (eraserBtn) eraserBtn.classList.toggle("active-tool", tool === "eraser");
 }
 
 function initDoodleCanvas() {
@@ -581,7 +652,8 @@ function initDoodleCanvas() {
       x1: doodleLastX, y1: doodleLastY,
       x2: pos.x, y2: pos.y,
       color: color,
-      size: doodleBrushSize
+      size: doodleBrushSize,
+      tool: doodleTool
     };
 
     drawDoodleSegment(segment); // instant local feedback, no waiting on the network
@@ -636,12 +708,15 @@ function drawDoodleSegment(segment) {
   if (!doodleCtx || !doodleCanvasEl) return;
   const rect = doodleCanvasEl.getBoundingClientRect();
 
+  // Older saved strokes won't have a "tool" field — treat those as pen strokes
+  doodleCtx.globalCompositeOperation = segment.tool === "eraser" ? "destination-out" : "source-over";
   doodleCtx.strokeStyle = segment.color;
   doodleCtx.lineWidth = segment.size;
   doodleCtx.beginPath();
   doodleCtx.moveTo(segment.x1 * rect.width, segment.y1 * rect.height);
   doodleCtx.lineTo(segment.x2 * rect.width, segment.y2 * rect.height);
   doodleCtx.stroke();
+  doodleCtx.globalCompositeOperation = "source-over"; // reset so nothing else is affected
 }
 
 // Wipes the local canvas bitmap only (doesn't touch the database)
@@ -693,4 +768,379 @@ function saveDoodle() {
   link.download = "our-doodle.png";
   link.href = doodleCanvasEl.toDataURL("image/png");
   link.click();
+}
+
+/* ======================================================
+   DOODLE GALLERY
+   Snapshots of the canvas saved into the website itself
+   (as opposed to "download" above, which saves to your device).
+   ====================================================== */
+
+function addDoodleToGallery() {
+  if (!doodleCanvasEl) return;
+
+  if (!isFirebaseReady()) {
+    alert("Gallery saving needs Firebase set up — see the comment near the bottom of main.html.");
+    return;
+  }
+
+  const dataURL = doodleCanvasEl.toDataURL("image/png");
+  firebase.database().ref("doodleGallery").push({
+    image: dataURL,
+    name: currentUserName || "someone",
+    time: Date.now()
+  });
+}
+
+function initDoodleGallery() {
+  const list = document.getElementById("doodleGalleryList");
+  if (!list) return; // section not on this page
+  if (!isFirebaseReady()) return;
+
+  firebase.database().ref("doodleGallery").limitToLast(40).on("child_added", (snapshot) => {
+    const entry = snapshot.val();
+    if (!entry || !entry.image) return;
+
+    const card = document.createElement("div");
+    card.className = "gallery-doodle-card";
+
+    const img = document.createElement("img");
+    img.src = entry.image;
+    img.alt = `doodle by ${entry.name || "someone"}`;
+
+    const caption = document.createElement("p");
+    caption.textContent = `by ${entry.name || "someone"}`;
+
+    card.appendChild(img);
+    card.appendChild(caption);
+    list.prepend(card);
+  });
+}
+
+/* ======================================================
+   LIVE CHAT
+   ====================================================== */
+
+let chatMessagesRef = null;
+
+function initChat() {
+  const list = document.getElementById("chatMessages");
+  if (!list) return; // widget not on this page
+  if (!isFirebaseReady()) {
+    const row = document.createElement("div");
+    row.className = "chat-message";
+    row.textContent = "chat needs Firebase set up to work — see main.html.";
+    list.appendChild(row);
+    return;
+  }
+
+  chatMessagesRef = firebase.database().ref("chat/messages");
+
+  chatMessagesRef.limitToLast(50).on("child_added", (snapshot) => {
+    appendChatMessage(snapshot.val());
+  });
+
+  const input = document.getElementById("chatInput");
+  if (input) {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendChatMessage();
+      }
+    });
+  }
+}
+
+function appendChatMessage(msg) {
+  const list = document.getElementById("chatMessages");
+  if (!list || !msg) return;
+
+  const row = document.createElement("div");
+  row.className = "chat-message" + (msg.name === currentUserName ? " chat-message-own" : "");
+
+  const nameEl = document.createElement("span");
+  nameEl.className = "chat-message-name";
+  nameEl.textContent = msg.name || "someone";
+
+  const textEl = document.createElement("span");
+  textEl.textContent = msg.text || "";
+
+  row.appendChild(nameEl);
+  row.appendChild(textEl);
+  list.appendChild(row);
+  list.scrollTop = list.scrollHeight;
+}
+
+function sendChatMessage() {
+  const input = document.getElementById("chatInput");
+  if (!input || !chatMessagesRef) return;
+
+  const text = input.value.trim();
+  if (!text) return;
+
+  chatMessagesRef.push({
+    name: currentUserName || "someone",
+    text: text,
+    time: Date.now()
+  });
+
+  input.value = "";
+  input.focus();
+}
+
+function toggleChat() {
+  const body = document.getElementById("chatBody");
+  const icon = document.getElementById("chatToggleIcon");
+  if (!body) return;
+
+  const collapsed = body.classList.toggle("chat-collapsed");
+  if (icon) icon.textContent = collapsed ? "▼" : "▲";
+}
+
+/* ======================================================
+   SEA ANGEL TAMAGOTCHI
+   Shared pet state — both of you pet/feed the same sea angel.
+   Stats can never reach zero, so it can never "die".
+   ====================================================== */
+
+let seaAngelStatsRef = null;
+let seaAngelLogRef = null;
+
+function initSeaAngel() {
+  const statsEl = document.getElementById("seaAngelStats");
+  if (!statsEl) return; // section not on this page
+  if (!isFirebaseReady()) return;
+
+  seaAngelStatsRef = firebase.database().ref("seaAngelPet/stats");
+  seaAngelLogRef = firebase.database().ref("seaAngelPet/log");
+
+  seaAngelStatsRef.once("value").then((snap) => {
+    if (!snap.exists()) {
+      seaAngelStatsRef.set({ happiness: 70, fullness: 70 });
+    }
+  });
+
+  seaAngelStatsRef.on("value", (snap) => {
+    renderSeaAngelStats(snap.val() || { happiness: 70, fullness: 70 });
+  });
+
+  seaAngelLogRef.limitToLast(5).on("child_added", (snap) => {
+    addSeaAngelLogEntry(snap.val());
+  });
+
+  // Very gentle decay over time so there's a reason to come back and check in —
+  // floored well above zero so the sea angel is always at least okay.
+  setInterval(() => {
+    if (!seaAngelStatsRef) return;
+    seaAngelStatsRef.transaction((stats) => {
+      if (!stats) return stats;
+      stats.happiness = Math.max(25, stats.happiness - 1);
+      stats.fullness = Math.max(25, stats.fullness - 1);
+      return stats;
+    });
+  }, 60000);
+}
+
+function renderSeaAngelStats(stats) {
+  const happinessBar = document.getElementById("seaAngelHappinessBar");
+  const fullnessBar = document.getElementById("seaAngelFullnessBar");
+  const moodImg = document.getElementById("seaAngelMoodImg");
+
+  if (happinessBar) happinessBar.style.width = `${stats.happiness}%`;
+  if (fullnessBar) fullnessBar.style.width = `${stats.fullness}%`;
+
+  if (moodImg) {
+    const avg = (stats.happiness + stats.fullness) / 2;
+    moodImg.classList.remove("happy", "neutral", "sad");
+    moodImg.classList.add(avg > 60 ? "happy" : avg > 35 ? "neutral" : "sad");
+  }
+}
+
+function petSeaAngel() {
+  if (!seaAngelStatsRef) return;
+  seaAngelStatsRef.transaction((stats) => {
+    if (!stats) stats = { happiness: 70, fullness: 70 };
+    stats.happiness = Math.min(100, stats.happiness + 12);
+    return stats;
+  });
+  if (seaAngelLogRef) {
+    seaAngelLogRef.push({ name: currentUserName || "someone", action: "petted", time: Date.now() });
+  }
+}
+
+function feedSeaAngel() {
+  if (!seaAngelStatsRef) return;
+  seaAngelStatsRef.transaction((stats) => {
+    if (!stats) stats = { happiness: 70, fullness: 70 };
+    stats.fullness = Math.min(100, stats.fullness + 15);
+    return stats;
+  });
+  if (seaAngelLogRef) {
+    seaAngelLogRef.push({ name: currentUserName || "someone", action: "fed", time: Date.now() });
+  }
+}
+
+function addSeaAngelLogEntry(entry) {
+  const feed = document.getElementById("seaAngelFeed");
+  if (!feed || !entry) return;
+
+  const line = document.createElement("div");
+  line.className = "sea-angel-feed-item";
+  const verb = entry.action === "petted" ? "petted 🖐️" : "fed 🍤";
+  line.textContent = `${entry.name || "someone"} ${verb} the sea angel!`;
+  feed.prepend(line);
+
+  while (feed.children.length > 5) feed.removeChild(feed.lastChild);
+}
+
+/* ======================================================
+   BLIND BAG UNBOXING (Smiski + Sylvanian Families)
+   The character lists below are placeholders — swap in the
+   real edition names (and add images if you want) any time.
+   ====================================================== */
+
+const BLIND_BAG_LINES = {
+  smiski: {
+    label: "Smiski",
+    characters: [
+      { name: "Reading", rarity: "common" },
+      { name: "Sleeping", rarity: "common" },
+      { name: "Stretching", rarity: "common" },
+      { name: "Watering Plant", rarity: "common" },
+      { name: "Doing Yoga", rarity: "rare" },
+      { name: "Playing Guitar", rarity: "rare" },
+      { name: "Glow Secret Star-Gazer", rarity: "secret" }
+    ]
+  },
+  sylvanian: {
+    label: "Sylvanian Families",
+    characters: [
+      { name: "Chocolate Rabbit Baby", rarity: "common" },
+      { name: "Cream Rabbit Baby", rarity: "common" },
+      { name: "Walnut Squirrel Baby", rarity: "common" },
+      { name: "Persian Cat Baby", rarity: "common" },
+      { name: "Chiffon Cat Baby", rarity: "rare" },
+      { name: "Husky Dog Baby", rarity: "rare" },
+      { name: "Golden Hamster Secret Edition", rarity: "secret" }
+    ]
+  }
+};
+
+let blindBagCollectionRef = null;
+let blindBagLogRef = null;
+
+function initBlindBag() {
+  const anyGrid = document.getElementById("blindBagGrid-smiski");
+  if (!anyGrid) return; // section not on this page
+  if (!isFirebaseReady()) return;
+
+  blindBagCollectionRef = firebase.database().ref("blindBag/collection");
+  blindBagLogRef = firebase.database().ref("blindBag/log");
+
+  renderBlindBagGrids({});
+
+  blindBagCollectionRef.on("value", (snap) => {
+    renderBlindBagGrids(snap.val() || {});
+  });
+
+  blindBagLogRef.limitToLast(6).on("child_added", (snap) => {
+    addBlindBagLogEntry(snap.val());
+  });
+}
+
+function blindBagKeyFor(name) {
+  return name.replace(/[^a-zA-Z0-9]/g, "_");
+}
+
+function pickRandomBlindBagCharacter(lineKey) {
+  const pool = BLIND_BAG_LINES[lineKey].characters;
+  const roll = Math.random();
+  const rarity = roll < 0.1 ? "secret" : roll < 0.4 ? "rare" : "common";
+  const candidates = pool.filter((c) => c.rarity === rarity);
+  const finalPool = candidates.length ? candidates : pool;
+  return finalPool[Math.floor(Math.random() * finalPool.length)];
+}
+
+function renderBlindBagGrids(collectionData) {
+  Object.keys(BLIND_BAG_LINES).forEach((lineKey) => {
+    const grid = document.getElementById(`blindBagGrid-${lineKey}`);
+    if (!grid) return;
+
+    grid.innerHTML = "";
+    const lineOwned = collectionData[lineKey] || {};
+
+    BLIND_BAG_LINES[lineKey].characters.forEach((char) => {
+      const key = blindBagKeyFor(char.name);
+      const unlocked = lineOwned[key];
+
+      const card = document.createElement("div");
+      card.className = "blindbag-card" + (unlocked ? ` unlocked rarity-${char.rarity}` : " locked");
+
+      if (unlocked) {
+        const icon = char.rarity === "secret" ? "✨" : char.rarity === "rare" ? "💎" : "🎀";
+        card.innerHTML =
+          `<div class="blindbag-icon">${icon}</div>` +
+          `<div class="blindbag-name">${char.name}</div>` +
+          `<div class="blindbag-unlocker">found by ${unlocked.name || "someone"}</div>`;
+      } else {
+        card.innerHTML = `<div class="blindbag-icon">❓</div><div class="blindbag-name">???</div>`;
+      }
+
+      grid.appendChild(card);
+    });
+  });
+}
+
+function unboxBlindBag(lineKey) {
+  if (!isFirebaseReady()) {
+    alert("Blind bag unboxing needs Firebase set up — see the comment near the bottom of main.html.");
+    return;
+  }
+
+  const chosen = pickRandomBlindBagCharacter(lineKey);
+  const key = blindBagKeyFor(chosen.name);
+
+  if (blindBagLogRef) {
+    blindBagLogRef.push({
+      name: currentUserName || "someone",
+      line: BLIND_BAG_LINES[lineKey].label,
+      character: chosen.name,
+      rarity: chosen.rarity,
+      time: Date.now()
+    });
+  }
+
+  if (blindBagCollectionRef) {
+    // First person to pull a given character keeps the "found by" credit —
+    // later pulls of the same character still get logged above, just don't
+    // overwrite who found it first.
+    blindBagCollectionRef.child(lineKey).child(key).transaction((existing) => {
+      if (existing) return existing;
+      return { name: currentUserName || "someone", rarity: chosen.rarity, time: Date.now() };
+    });
+  }
+
+  showBlindBagReveal(chosen);
+}
+
+function showBlindBagReveal(chosen) {
+  const reveal = document.getElementById("blindBagReveal");
+  if (!reveal) return;
+
+  reveal.textContent = `you got: ${chosen.name} (${chosen.rarity})!`;
+  reveal.classList.remove("blindbag-reveal-pop");
+  void reveal.offsetWidth; // restart the pop animation
+  reveal.classList.add("blindbag-reveal-pop");
+}
+
+function addBlindBagLogEntry(entry) {
+  const feed = document.getElementById("blindBagFeed");
+  if (!feed || !entry) return;
+
+  const line = document.createElement("div");
+  line.className = "blindbag-feed-item";
+  line.textContent = `${entry.name || "someone"} unboxed ${entry.character} from ${entry.line}! (${entry.rarity})`;
+  feed.prepend(line);
+
+  while (feed.children.length > 6) feed.removeChild(feed.lastChild);
 }
