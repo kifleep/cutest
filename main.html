@@ -7,6 +7,16 @@
 </head>
 <body>
 
+  <div id="nameOverlay" class="name-overlay">
+    <div class="name-modal">
+      <div class="get-well-icons">💌 ✨ 💌</div>
+      <h2 class="get-well-title">who's this?</h2>
+      <p class="get-well-message">enter your name so we both know who's who around here!</p>
+      <input type="text" id="nameInput" class="name-input" placeholder="your name..." maxlength="20">
+      <button type="button" class="get-well-close-btn" onclick="saveUserName()">let's go 💗</button>
+    </div>
+  </div>
+
   <div id="getWellOverlay" class="get-well-overlay">
     <div class="get-well-modal">
       <div class="get-well-icons">🌷 🩹 💗 🩹 🌷</div>
@@ -25,6 +35,8 @@
     <ul>
       <li><a href="#" onclick="showGetWellOverlay(); return false;">🌸 get well</a></li>
       <li><a href="#doodle">🎨 doodle</a></li>
+      <li><a href="#seaAngelPet">👼 sea angel</a></li>
+      <li><a href="#blindbag">🎁 blind bag</a></li>
       <li><a href="#wishlist">📝 wishlist</a></li>
       <li><a href="#polaroids">✿ polaroids</a></li>
       <li><a href="#unsent">♡ unsent</a></li>
@@ -47,12 +59,23 @@
 
       <span class="doodle-divider"></span>
 
+      <button type="button" class="doodle-action-btn active-tool" id="doodlePenBtn" onclick="setDoodleTool('pen')">pen 🖊️</button>
+      <button type="button" class="doodle-action-btn" id="doodleEraserBtn" onclick="setDoodleTool('eraser')">eraser 🧽</button>
+
+      <span class="doodle-divider"></span>
+
       <button type="button" class="doodle-action-btn" onclick="clearDoodle()">clear ❌</button>
-      <button type="button" class="doodle-action-btn" onclick="saveDoodle()">save 💾</button>
+      <button type="button" class="doodle-action-btn" onclick="saveDoodle()">download 💾</button>
+      <button type="button" class="doodle-action-btn" onclick="addDoodleToGallery()">add to gallery 🖼️</button>
     </div>
     <div class="doodle-canvas-wrapper">
       <canvas id="doodleCanvas" width="600" height="400"></canvas>
     </div>
+  </div>
+
+  <div class="doodle-gallery-wrap">
+    <h3 class="doodle-gallery-title">saved doodles 🖼️</h3>
+    <div id="doodleGalleryList" class="doodle-gallery-grid"></div>
   </div>
 </section>
 
@@ -64,6 +87,32 @@
 <div class="countdown-box">
   <span id="countdown"></span>
 </div>
+
+<section id="seaAngelPet">
+  <h2>raise our sea angel 👼🌊</h2>
+  <p class="doodle-subtitle">pet it, feed it, and watch it react &mdash; it can never die, so don't stress!</p>
+  <div class="sea-angel-pet-container">
+    <img src="sea-angel.png" id="seaAngelMoodImg" class="sea-angel-mood happy" alt="Sea Angel">
+    <div id="seaAngelStats" class="sea-angel-stats">
+      <div class="sea-angel-stat-row">
+        <span>happiness</span>
+        <div class="sea-angel-bar-track"><div id="seaAngelHappinessBar" class="sea-angel-bar-fill happiness"></div></div>
+      </div>
+      <div class="sea-angel-stat-row">
+        <span>fullness</span>
+        <div class="sea-angel-bar-track"><div id="seaAngelFullnessBar" class="sea-angel-bar-fill fullness"></div></div>
+      </div>
+    </div>
+    <div class="sea-angel-buttons">
+      <button type="button" class="doodle-action-btn" onclick="petSeaAngel()">pet 🖐️</button>
+      <button type="button" class="doodle-action-btn" onclick="feedSeaAngel()">feed 🍤</button>
+    </div>
+    <div class="sea-angel-feed-wrap">
+      <h4 class="sea-angel-feed-title">recent activity</h4>
+      <div id="seaAngelFeed" class="sea-angel-feed"></div>
+    </div>
+  </div>
+</section>
 
 <section id="wishlist">
   <h2>recovery wishlist 🎀</h2>
@@ -90,6 +139,32 @@
 <div class="bouquet" id="bouquetContainer">
     <img src="bouquetPaper.png" class="bouquet-paper" alt="Bouquet Paper">
 </div>
+
+<section id="blindbag">
+  <h2>blind bag unboxing 🎁</h2>
+  <p class="doodle-subtitle">smiski &amp; sylvanian families &mdash; unbox and see who finds what, live!</p>
+
+  <div class="blindbag-section">
+    <div id="blindBagReveal" class="blindbag-reveal"></div>
+
+    <div class="blindbag-line">
+      <h3 class="blindbag-line-title">Smiski</h3>
+      <button type="button" class="doodle-action-btn" onclick="unboxBlindBag('smiski')">unbox a Smiski 🎁</button>
+      <div id="blindBagGrid-smiski" class="blindbag-grid"></div>
+    </div>
+
+    <div class="blindbag-line">
+      <h3 class="blindbag-line-title">Sylvanian Families</h3>
+      <button type="button" class="doodle-action-btn" onclick="unboxBlindBag('sylvanian')">unbox a Sylvanian Family 🎁</button>
+      <div id="blindBagGrid-sylvanian" class="blindbag-grid"></div>
+    </div>
+
+    <div class="blindbag-feed-wrap">
+      <h4 class="blindbag-feed-title">live unboxings</h4>
+      <div id="blindBagFeed" class="blindbag-feed"></div>
+    </div>
+  </div>
+</section>
 
 <h2>lethal facecard reminder!</h2>
     <div id="camera-section">
@@ -133,6 +208,17 @@
 
 <div id="customScrollbar">
   <img src="plushie.png" alt="Plushie" id="plushieThumb" draggable="false">
+</div>
+
+<div id="chatWidget" class="chat-widget">
+  <div class="chat-header" onclick="toggleChat()">💬 chat <span id="chatToggleIcon">▲</span></div>
+  <div class="chat-body" id="chatBody">
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" class="chat-input" placeholder="say something...">
+      <button type="button" class="chat-send-btn" onclick="sendChatMessage()">send</button>
+    </div>
+  </div>
 </div>
 
 <h2>typewriter!</h2>
@@ -296,7 +382,8 @@
 </footer>
 
   <!--
-    Firebase powers the LIVE + PERSISTENT doodle canvas above.
+    Firebase powers the LIVE + PERSISTENT features above (doodle canvas, gallery,
+    chat, sea angel pet, and blind bag unboxing).
     Setup (takes about 5 minutes, totally free):
       1. Go to https://console.firebase.google.com and create a project (any name).
       2. In the project, click the "</>" (web app) icon to register a web app.
@@ -305,10 +392,11 @@
          replacing the placeholder values.
       4. In the left sidebar go to Build > Realtime Database > Create Database.
          Pick any region, and start in "test mode" (so it works right away).
-      5. Push these files to GitHub — the canvas will now sync live between anyone
-         who has the page open, and the drawing will persist across visits/devices.
+      5. Push these files to GitHub — everything will now sync live between anyone
+         who has the page open, and will persist across visits/devices.
     If you skip this, the doodle canvas still works fine locally, it just won't be
-    live or saved between visits.
+    live or saved between visits — and the chat / pet / blind bag features need
+    Firebase to work at all, since they're inherently multiplayer.
   -->
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
