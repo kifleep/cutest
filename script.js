@@ -11,9 +11,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Everything else waits behind the name gate — see initNameGate() below.
-  initNameGate();
+  // The get-well card shows first; once it's closed, the name gate takes over
+  // (see closeGetWellOverlay() below). If this page has no get-well card,
+  // skip straight to the name gate.
+  if (document.getElementById("getWellOverlay")) {
+    showGetWellOverlay();
+  } else {
+    initNameGate();
+  }
 });
+
+// Only chain into the name gate the first time the get-well card closes —
+// reopening it later via the nav link shouldn't re-trigger anything.
+let hasHandledInitialGetWellClose = false;
 
 /* ======================================================
    NAME ENTRY GATE
@@ -68,7 +78,6 @@ function saveUserName() {
 // Runs once we know who's visiting — kicks off every feature that was
 // previously fired unconditionally on DOMContentLoaded.
 function onNameReady() {
-  showGetWellOverlay();
   initWishlist();
   initDoodleCanvas();
   initDoodleGallery();
@@ -103,6 +112,10 @@ function closeGetWellOverlay() {
   overlay.classList.remove("visible");
   setTimeout(() => {
     overlay.style.display = "none";
+    if (!hasHandledInitialGetWellClose) {
+      hasHandledInitialGetWellClose = true;
+      initNameGate();
+    }
   }, 400); // matches the CSS transition duration
 }
 
@@ -807,6 +820,7 @@ function initDoodleGallery() {
     const img = document.createElement("img");
     img.src = entry.image;
     img.alt = `doodle by ${entry.name || "someone"}`;
+    img.addEventListener("click", () => openDoodleLightbox(entry.image, entry.name));
 
     const caption = document.createElement("p");
     caption.textContent = `by ${entry.name || "someone"}`;
@@ -815,6 +829,33 @@ function initDoodleGallery() {
     card.appendChild(caption);
     list.prepend(card);
   });
+}
+
+let lightboxCurrentImage = null;
+
+function openDoodleLightbox(imageData, name) {
+  const overlay = document.getElementById("doodleLightbox");
+  const img = document.getElementById("lightboxImage");
+  const caption = document.getElementById("lightboxCaption");
+  if (!overlay || !img) return;
+
+  img.src = imageData;
+  if (caption) caption.textContent = `by ${name || "someone"}`;
+  lightboxCurrentImage = imageData;
+  overlay.style.display = "flex";
+}
+
+function closeDoodleLightbox() {
+  const overlay = document.getElementById("doodleLightbox");
+  if (overlay) overlay.style.display = "none";
+}
+
+function downloadLightboxImage() {
+  if (!lightboxCurrentImage) return;
+  const link = document.createElement("a");
+  link.download = "our-doodle.png";
+  link.href = lightboxCurrentImage;
+  link.click();
 }
 
 /* ======================================================
@@ -851,22 +892,32 @@ function initChat() {
   }
 }
 
+// Assigns each name a consistent color (Roblox-style), no manual setup needed
+const CHAT_NAME_COLORS = ["#ff6b9d", "#4fc3f7", "#ffd54f", "#a5d6a7", "#ce93d8", "#ffab91", "#80cbc4", "#f48fb1"];
+
+function chatColorForName(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return CHAT_NAME_COLORS[Math.abs(hash) % CHAT_NAME_COLORS.length];
+}
+
 function appendChatMessage(msg) {
   const list = document.getElementById("chatMessages");
   if (!list || !msg) return;
 
   const row = document.createElement("div");
-  row.className = "chat-message" + (msg.name === currentUserName ? " chat-message-own" : "");
+  row.className = "chat-message";
 
   const nameEl = document.createElement("span");
   nameEl.className = "chat-message-name";
-  nameEl.textContent = msg.name || "someone";
-
-  const textEl = document.createElement("span");
-  textEl.textContent = msg.text || "";
+  const name = msg.name || "someone";
+  nameEl.textContent = `${name}:`;
+  nameEl.style.color = chatColorForName(name);
 
   row.appendChild(nameEl);
-  row.appendChild(textEl);
+  row.appendChild(document.createTextNode(" " + (msg.text || "")));
   list.appendChild(row);
   list.scrollTop = list.scrollHeight;
 }
@@ -1028,10 +1079,28 @@ const BLIND_BAG_LINES = {
 
 let blindBagCollectionRef = null;
 let blindBagLogRef = null;
+let currentBlindBagTab = "smiski";
+
+function switchBlindBagTab(lineKey) {
+  currentBlindBagTab = lineKey;
+
+  Object.keys(BLIND_BAG_LINES).forEach((key) => {
+    const grid = document.getElementById(`blindBagGrid-${key}`);
+    const tab = document.getElementById(`blindBagTab-${key}`);
+    if (grid) grid.style.display = key === lineKey ? "grid" : "none";
+    if (tab) tab.classList.toggle("active-tool", key === lineKey);
+  });
+
+  const unboxBtn = document.getElementById("blindBagUnboxBtn");
+  if (unboxBtn) unboxBtn.textContent = `unbox a ${BLIND_BAG_LINES[lineKey].label} 🎁`;
+}
 
 function initBlindBag() {
   const anyGrid = document.getElementById("blindBagGrid-smiski");
   if (!anyGrid) return; // section not on this page
+
+  switchBlindBagTab("smiski");
+
   if (!isFirebaseReady()) return;
 
   blindBagCollectionRef = firebase.database().ref("blindBag/collection");
