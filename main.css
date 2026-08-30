@@ -282,16 +282,40 @@ body::-webkit-scrollbar {
 }
 
 .site-footer {
-  background-color: #fff0f8;
-  color: #555;
+  background: linear-gradient(135deg, #fff0f8, #ffe1ee);
+  color: #a30055;
   text-align: center;
-  padding: 20px 10px;
+  padding: 35px 20px 25px 20px;
   font-size: 14px;
-  font-family: 'Cute Font', sans-serif; /* use your fav font */
+  font-family: 'Comic Sans MS', cursive;
   position: relative;
   width: 100%;
   margin-top: 40px;
-  border-top: 1px dashed #ffb6c1;
+  border-top: 3px dashed #ffb6c1;
+}
+
+.footer-countdown {
+  margin-bottom: 22px;
+}
+
+.footer-countdown-label {
+  font-weight: bold;
+  color: #d60076;
+  font-size: 1.1em;
+  margin: 0 0 12px 0;
+  letter-spacing: 0.5px;
+}
+
+.footer-countdown-box {
+  display: inline-block;
+  margin: 0 auto;
+}
+
+.footer-note {
+  color: #a30055;
+  font-size: 0.85em;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
 h2 {
@@ -417,11 +441,55 @@ h2 {
             background: #fff;
         }
 
+        .florist-container {
+            text-align: center;
+            max-width: 500px;
+            margin: 0 auto 40px auto;
+        }
+
+        .florist-flower-tray {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            margin-bottom: 10px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 16px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+        }
+
+        .florist-flower-chip {
+            width: 56px;
+            height: 56px;
+            object-fit: contain;
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: transform 0.15s ease;
+        }
+
+        .florist-flower-chip:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+        }
+
+        .florist-flower-drag-ghost {
+            opacity: 0.85;
+        }
+
+        .florist-actions {
+            margin-top: 14px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
         .bouquet {
             position: relative;
             width: 300px;
             height: 400px;
-            margin: 40px auto;
+            margin: 20px auto;
             padding: 40px;
             background: rgba(255, 255, 255, 0.9);
             border-radius: 20px;
@@ -526,7 +594,7 @@ h2 {
 
 /* ================= NAME ENTRY GATE ================= */
 .name-overlay {
-  display: flex; /* visible by default; JS hides it if a name is already saved */
+  display: none; /* JS shows this once the get-well card is closed (or immediately if no name is saved yet and there's no get-well card on this page) */
   position: fixed;
   inset: 0;
   z-index: 10001; /* sits above the get-well overlay */
@@ -826,11 +894,36 @@ h2 {
 }
 
 .gallery-doodle-card {
+  position: relative;
   background: #fff8fb;
   border: 2px solid #ffcbe0;
   border-radius: 12px;
   overflow: hidden;
   text-align: center;
+}
+
+.gallery-delete-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(120, 20, 60, 0.75);
+  color: #fff;
+  font-size: 0.7em;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+}
+
+.gallery-delete-btn:hover {
+  background: #d60076;
 }
 
 .gallery-doodle-card img {
@@ -896,28 +989,28 @@ h2 {
   gap: 10px;
 }
 
-/* ================= LIVE CHAT WIDGET (Roblox-style) ================= */
+/* ================= LIVE CHAT WIDGET ================= */
 .chat-widget {
   position: fixed;
   bottom: 24px;
   right: 24px;
   width: 300px;
   max-width: calc(100vw - 40px);
-  background: linear-gradient(180deg, rgba(90, 120, 160, 0.9), rgba(22, 30, 46, 0.94));
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  background: linear-gradient(180deg, rgba(255, 240, 245, 0.97), rgba(255, 214, 230, 0.97));
+  border: 2px solid #ffb6c1;
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(255, 105, 180, 0.35);
   z-index: 9998;
   overflow: hidden;
-  font-family: 'Segoe UI', Arial, sans-serif;
+  font-family: 'Comic Sans MS', cursive;
 }
 
 .chat-header {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.85);
-  font-weight: 600;
-  font-size: 0.8em;
-  padding: 8px 12px;
+  background: linear-gradient(135deg, #ff9ec4, #ff69b4);
+  color: #fff;
+  font-weight: bold;
+  font-size: 0.85em;
+  padding: 10px 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -946,13 +1039,13 @@ h2 {
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 5px;
 }
 
 .chat-message {
   font-size: 0.85em;
   line-height: 1.4em;
-  color: #f1f5f9;
+  color: #a30055;
   word-break: break-word;
 }
 
@@ -966,29 +1059,34 @@ h2 {
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  background: rgba(10, 14, 24, 0.55);
+  background: rgba(255, 255, 255, 0.5);
+  border-top: 1px solid #ffcbe0;
 }
 
 .chat-input {
   flex: 1;
-  border: none;
-  border-radius: 6px;
-  padding: 9px 12px;
-  font-family: 'Segoe UI', Arial, sans-serif;
+  border: 2px solid #ffcbe0;
+  border-radius: 14px;
+  padding: 8px 12px;
+  font-family: 'Comic Sans MS', cursive;
   font-size: 0.85em;
   outline: none;
-  background: rgba(255, 255, 255, 0.08);
-  color: #f1f5f9;
+  background: #fff8fb;
+  color: #d60076;
+}
+
+.chat-input:focus {
+  border-color: #ff69b4;
 }
 
 .chat-input::placeholder {
-  color: rgba(241, 245, 249, 0.55);
+  color: #ffb6c1;
 }
 
 .chat-send-btn {
   border: none;
   background: transparent;
-  color: rgba(241, 245, 249, 0.7);
+  color: #ff69b4;
   font-size: 1.2em;
   cursor: pointer;
   padding: 4px 6px;
@@ -996,7 +1094,7 @@ h2 {
 }
 
 .chat-send-btn:hover {
-  color: #ffffff;
+  color: #d60076;
 }
 
 /* ================= SIDE ACTIVITY FEED (shared by sea angel + blind bag) ================= */
@@ -1058,6 +1156,10 @@ h2 {
   margin-bottom: 16px;
   filter: drop-shadow(0 4px 10px rgba(255,105,180,0.4));
   animation: seaAngelBob 3s ease-in-out infinite;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
 }
 
 @keyframes seaAngelBob {
@@ -1112,6 +1214,51 @@ h2 {
   justify-content: center;
   gap: 10px;
   margin-bottom: 16px;
+}
+
+.sea-angel-drop-zone {
+  display: flex;
+  justify-content: center;
+}
+
+.sea-angel-hint {
+  font-size: 0.8em;
+  color: #a30055;
+  margin: 4px 0 12px 0;
+}
+
+.sea-angel-food-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.sea-angel-food {
+  width: 64px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+  transition: transform 0.15s ease;
+}
+
+.sea-angel-food:active {
+  cursor: grabbing;
+  transform: scale(1.08);
+}
+
+.sea-angel-tap-heart {
+  position: fixed;
+  font-size: 1.5em;
+  pointer-events: none;
+  z-index: 10006;
+  animation: seaAngelHeartPop 0.9s ease forwards;
+}
+
+@keyframes seaAngelHeartPop {
+  0% { opacity: 1; transform: translateY(0) scale(0.6); }
+  100% { opacity: 0; transform: translateY(-50px) scale(1.3); }
 }
 
 .sea-angel-feed-item {
@@ -1169,6 +1316,67 @@ h2 {
 
 .blindbag-unbox-btn {
   margin-bottom: 6px;
+}
+
+.blindbag-shake-wrap {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.blindbag-placeholder {
+  width: 140px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  filter: drop-shadow(0 6px 14px rgba(255, 105, 180, 0.4));
+}
+
+.blindbag-placeholder.shake-1 { animation: bagShake1 0.3s ease; }
+.blindbag-placeholder.shake-2 { animation: bagShake2 0.3s ease; }
+.blindbag-placeholder.shake-3 { animation: bagShake3 0.35s ease; }
+
+@keyframes bagShake1 {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-4deg); }
+  75% { transform: rotate(4deg); }
+}
+
+@keyframes bagShake2 {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-8deg); }
+  60% { transform: rotate(8deg); }
+  80% { transform: rotate(-5deg); }
+}
+
+@keyframes bagShake3 {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(-14deg); }
+  40% { transform: rotate(14deg); }
+  65% { transform: rotate(-10deg); }
+  85% { transform: rotate(10deg); }
+}
+
+.blindbag-hint {
+  font-size: 0.85em;
+  color: #d60076;
+  margin: 10px 0;
+}
+
+.blindbag-shake-meter-track {
+  width: 200px;
+  height: 10px;
+  margin: 0 auto;
+  border-radius: 10px;
+  background: #ffe4ef;
+  overflow: hidden;
+}
+
+.blindbag-shake-meter-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #ff9ec4, #ff69b4);
+  transition: width 0.2s ease;
 }
 
 .blindbag-grid {
