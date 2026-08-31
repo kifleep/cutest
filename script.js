@@ -84,6 +84,7 @@ function onNameReady() {
   initChat();
   initSeaAngel();
   initBlindBag();
+  initFlorist();
 }
 
 function isFirebaseReady() {
@@ -411,55 +412,150 @@ if (startCameraBtn) {
   });
 }
 
-    const bouquetContainer = document.getElementById("bouquetContainer");
-    let flowers = [];
+/* ======================================================
+   FLORIST — LIVE, DRAG-TO-PLACE BOUQUET (synced via Firebase)
+   ====================================================== */
 
-    function addFlower(src) {
-        if (flowers.length >= 9) {
-            return;
-        }
+let bouquetFlowersRef = null;
+let bouquetClearedRef = null;
+let bouquetFirebaseReady = false;
 
-        // Add random properties for size & rotation
-        flowers.push({
-            src,
-            size: Math.random() * 40 + 60, // between 60px and 100px
-            rotation: Math.random() * 40 - 20 // between -20° and +20°
-        });
+function initFlorist() {
+  const bouquetContainer = document.getElementById("bouquetContainer");
+  if (!bouquetContainer) return; // section not on this page
 
-        renderBouquet();
+  if (isFirebaseReady()) {
+    bouquetFlowersRef = firebase.database().ref("bouquet/flowers");
+    bouquetClearedRef = firebase.database().ref("bouquet/clearedAt");
+    bouquetFirebaseReady = true;
+
+    // Loads every flower already placed (so the bouquet persists across visits),
+    // then keeps adding new ones live as anyone drops them.
+    bouquetFlowersRef.on("child_added", (snapshot) => {
+      renderBouquetFlower(snapshot.key, snapshot.val());
+    });
+
+    let skipFirstClear = true;
+    bouquetClearedRef.on("value", () => {
+      if (skipFirstClear) {
+        skipFirstClear = false;
+        return;
+      }
+      clearBouquetLocalOnly();
+    });
+  }
+
+  document.querySelectorAll(".florist-flower-chip").forEach((chip) => {
+    setupFlowerDrag(chip, bouquetContainer);
+  });
+}
+
+function setupFlowerDrag(chip, bouquetContainer) {
+  chip.addEventListener("pointerdown", (evt) => {
+    evt.preventDefault();
+
+    const chipRect = chip.getBoundingClientRect();
+    const ghost = chip.cloneNode(true);
+    ghost.className = "florist-flower-drag-ghost";
+    ghost.style.position = "fixed";
+    ghost.style.pointerEvents = "none";
+    ghost.style.zIndex = "10005";
+    ghost.style.width = `${chipRect.width}px`;
+    ghost.style.left = `${evt.clientX - chipRect.width / 2}px`;
+    ghost.style.top = `${evt.clientY - chipRect.width / 2}px`;
+    document.body.appendChild(ghost);
+
+    function moveGhost(moveEvt) {
+      ghost.style.left = `${moveEvt.clientX - chipRect.width / 2}px`;
+      ghost.style.top = `${moveEvt.clientY - chipRect.width / 2}px`;
     }
 
-    function clearBouquet() {
-        flowers = [];
-        renderBouquet();
+    function dropGhost(upEvt) {
+      document.removeEventListener("pointermove", moveGhost);
+      document.removeEventListener("pointerup", dropGhost);
+      ghost.remove();
+
+      const boxRect = bouquetContainer.getBoundingClientRect();
+      const inside =
+        upEvt.clientX >= boxRect.left && upEvt.clientX <= boxRect.right &&
+        upEvt.clientY >= boxRect.top && upEvt.clientY <= boxRect.bottom;
+
+      if (!inside) return; // dropped outside the paper — do nothing
+
+      const flowerData = {
+        src: chip.dataset.flower,
+        x: ((upEvt.clientX - boxRect.left) / boxRect.width) * 100,
+        y: ((upEvt.clientY - boxRect.top) / boxRect.height) * 100,
+        size: Math.random() * 40 + 60,
+        rotation: Math.random() * 40 - 20,
+        name: currentUserName || "someone"
+      };
+
+      if (bouquetFirebaseReady) {
+        bouquetFlowersRef.push(flowerData);
+      } else {
+        renderBouquetFlower(`local-${Date.now()}`, flowerData);
+      }
     }
 
-    function renderBouquet() {
-        bouquetContainer.innerHTML = '<img src="bouquetPaper.png" class="bouquet-paper" alt="Bouquet Paper">';
+    document.addEventListener("pointermove", moveGhost);
+    document.addEventListener("pointerup", dropGhost);
+  });
+}
 
-        const startX = 100;
-        const spacing = 25;
-        const y = 150;
+function renderBouquetFlower(key, flower) {
+  const bouquetContainer = document.getElementById("bouquetContainer");
+  if (!bouquetContainer || !flower) return;
 
-        flowers.forEach((flower, index) => {
-            const img = document.createElement('img');
-            img.src = flower.src;
-            img.classList.add('flower');
+  const img = document.createElement("img");
+  img.src = flower.src;
+  img.className = "flower";
+  img.dataset.key = key;
+  img.style.width = `${flower.size}px`;
+  img.style.height = `${flower.size}px`;
+  img.style.left = `${flower.x}%`;
+  img.style.top = `${flower.y}%`;
+  img.style.transform = `translate(-50%, -50%) rotate(${flower.rotation}deg)`;
 
-            img.style.width = `${flower.size}px`;
-            img.style.height = `${flower.size}px`;
-            img.style.left = `${startX + index * spacing}px`;
-            img.style.top = `${y}px`;
-            img.style.transform = `translate(-50%, -50%) rotate(${flower.rotation}deg)`;
+  bouquetContainer.appendChild(img);
 
-            bouquetContainer.appendChild(img);
-        });
+  // Keep the paper texture on top of every flower
+  const paper = bouquetContainer.querySelector(".bouquet-paper");
+  if (paper) bouquetContainer.appendChild(paper);
+}
 
-        // Keep bouquet paper on top
-        const paper = bouquetContainer.querySelector('.bouquet-paper');
-        bouquetContainer.appendChild(paper);
+function clearBouquet() {
+  if (bouquetFirebaseReady) {
+    if (!confirm("Clear the bouquet for both of you? This can't be undone.")) return;
+    bouquetFlowersRef.remove();
+    bouquetClearedRef.set(Date.now());
+  } else {
+    clearBouquetLocalOnly();
+  }
+}
 
-    }
+function clearBouquetLocalOnly() {
+  const bouquetContainer = document.getElementById("bouquetContainer");
+  if (!bouquetContainer) return;
+  bouquetContainer.innerHTML = '<img src="bouquetPaper.png" class="bouquet-paper" alt="Bouquet Paper">';
+}
+
+function saveBouquetImage() {
+  const bouquetContainer = document.getElementById("bouquetContainer");
+  if (!bouquetContainer) return;
+
+  if (typeof html2canvas === "undefined") {
+    alert("Still loading the image tool — give it a second and try again.");
+    return;
+  }
+
+  html2canvas(bouquetContainer, { backgroundColor: null }).then((canvas) => {
+    const link = document.createElement("a");
+    link.download = "our-bouquet.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  });
+}
 
 /* ======================================================
    RECOVERY WISHLIST
@@ -810,30 +906,65 @@ function initDoodleGallery() {
   if (!list) return; // section not on this page
   if (!isFirebaseReady()) return;
 
-  firebase.database().ref("doodleGallery").limitToLast(40).on("child_added", (snapshot) => {
+  const galleryRef = firebase.database().ref("doodleGallery");
+
+  // child_added fires once for every doodle already saved (so old ones load
+  // back in on every visit), then again in real time for new ones.
+  galleryRef.limitToLast(60).on("child_added", (snapshot) => {
     const entry = snapshot.val();
     if (!entry || !entry.image) return;
+    addGalleryCard(snapshot.key, entry);
+  });
 
-    const card = document.createElement("div");
-    card.className = "gallery-doodle-card";
-
-    const img = document.createElement("img");
-    img.src = entry.image;
-    img.alt = `doodle by ${entry.name || "someone"}`;
-    img.addEventListener("click", () => openDoodleLightbox(entry.image, entry.name));
-
-    const caption = document.createElement("p");
-    caption.textContent = `by ${entry.name || "someone"}`;
-
-    card.appendChild(img);
-    card.appendChild(caption);
-    list.prepend(card);
+  // Keeps everyone's gallery in sync when a doodle is deleted
+  galleryRef.on("child_removed", (snapshot) => {
+    const card = document.querySelector(`.gallery-doodle-card[data-key="${snapshot.key}"]`);
+    if (card) card.remove();
   });
 }
 
-let lightboxCurrentImage = null;
+function addGalleryCard(key, entry) {
+  const list = document.getElementById("doodleGalleryList");
+  if (!list) return;
 
-function openDoodleLightbox(imageData, name) {
+  const card = document.createElement("div");
+  card.className = "gallery-doodle-card";
+  card.dataset.key = key;
+
+  const img = document.createElement("img");
+  img.src = entry.image;
+  img.alt = `doodle by ${entry.name || "someone"}`;
+  img.addEventListener("click", () => openDoodleLightbox(entry.image, entry.name, key));
+
+  const caption = document.createElement("p");
+  caption.textContent = `by ${entry.name || "someone"}`;
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.type = "button";
+  deleteBtn.className = "gallery-delete-btn";
+  deleteBtn.textContent = "✕";
+  deleteBtn.title = "delete this doodle";
+  deleteBtn.addEventListener("click", (evt) => {
+    evt.stopPropagation();
+    deleteGalleryDoodle(key);
+  });
+
+  card.appendChild(img);
+  card.appendChild(caption);
+  card.appendChild(deleteBtn);
+  list.prepend(card);
+}
+
+function deleteGalleryDoodle(key) {
+  if (!isFirebaseReady() || !key) return;
+  if (!confirm("Delete this doodle from the gallery? This can't be undone.")) return;
+  firebase.database().ref("doodleGallery").child(key).remove();
+}
+
+let lightboxCurrentImage = null;
+let lightboxCurrentKey = null;
+
+function openDoodleLightbox(imageData, name, key) {
   const overlay = document.getElementById("doodleLightbox");
   const img = document.getElementById("lightboxImage");
   const caption = document.getElementById("lightboxCaption");
@@ -842,6 +973,7 @@ function openDoodleLightbox(imageData, name) {
   img.src = imageData;
   if (caption) caption.textContent = `by ${name || "someone"}`;
   lightboxCurrentImage = imageData;
+  lightboxCurrentKey = key || null;
   overlay.style.display = "flex";
 }
 
@@ -856,6 +988,12 @@ function downloadLightboxImage() {
   link.download = "our-doodle.png";
   link.href = lightboxCurrentImage;
   link.click();
+}
+
+function deleteLightboxImage() {
+  if (!lightboxCurrentKey) return;
+  deleteGalleryDoodle(lightboxCurrentKey);
+  closeDoodleLightbox();
 }
 
 /* ======================================================
@@ -892,8 +1030,8 @@ function initChat() {
   }
 }
 
-// Assigns each name a consistent color (Roblox-style), no manual setup needed
-const CHAT_NAME_COLORS = ["#ff6b9d", "#4fc3f7", "#ffd54f", "#a5d6a7", "#ce93d8", "#ffab91", "#80cbc4", "#f48fb1"];
+// Assigns each name a consistent pink-family color, no manual setup needed
+const CHAT_NAME_COLORS = ["#ff69b4", "#d6006f", "#ff5da2", "#c2005f", "#ff8fb8", "#a30055"];
 
 function chatColorForName(name) {
   let hash = 0;
@@ -960,6 +1098,9 @@ let seaAngelLogRef = null;
 function initSeaAngel() {
   const statsEl = document.getElementById("seaAngelStats");
   if (!statsEl) return; // section not on this page
+
+  initSeaAngelInteractions();
+
   if (!isFirebaseReady()) return;
 
   seaAngelStatsRef = firebase.database().ref("seaAngelPet/stats");
@@ -1011,7 +1152,7 @@ function petSeaAngel() {
   if (!seaAngelStatsRef) return;
   seaAngelStatsRef.transaction((stats) => {
     if (!stats) stats = { happiness: 70, fullness: 70 };
-    stats.happiness = Math.min(100, stats.happiness + 12);
+    stats.happiness = Math.min(100, stats.happiness + 4);
     return stats;
   });
   if (seaAngelLogRef) {
@@ -1029,6 +1170,94 @@ function feedSeaAngel() {
   if (seaAngelLogRef) {
     seaAngelLogRef.push({ name: currentUserName || "someone", action: "fed", time: Date.now() });
   }
+}
+
+// Tapping the sea angel pets it (small bump per tap, so it takes a few taps
+// to notice — encourages actually playing with it). Dragging the octopus
+// onto it feeds it. Works with both mouse and touch via Pointer Events.
+function initSeaAngelInteractions() {
+  const moodImg = document.getElementById("seaAngelMoodImg");
+  const dropZone = document.getElementById("seaAngelDropZone");
+  const food = document.getElementById("seaAngelFood");
+
+  if (moodImg) {
+    moodImg.addEventListener("click", () => {
+      petSeaAngel();
+      spawnSeaAngelHeart(moodImg, "💗");
+    });
+  }
+
+  if (food && dropZone) {
+    let dragging = false;
+    let startLeft = 0, startTop = 0, startX = 0, startY = 0, width = 0;
+
+    food.addEventListener("pointerdown", (e) => {
+      dragging = true;
+      food.setPointerCapture(e.pointerId);
+      const rect = food.getBoundingClientRect();
+      width = rect.width;
+      startLeft = rect.left;
+      startTop = rect.top;
+      startX = e.clientX;
+      startY = e.clientY;
+      food.style.position = "fixed";
+      food.style.left = `${startLeft}px`;
+      food.style.top = `${startTop}px`;
+      food.style.width = `${width}px`;
+      food.style.zIndex = 10005;
+    });
+
+    food.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      food.style.left = `${startLeft + dx}px`;
+      food.style.top = `${startTop + dy}px`;
+    });
+
+    function endDrag() {
+      if (!dragging) return;
+      dragging = false;
+
+      const foodRect = food.getBoundingClientRect();
+      const zoneRect = dropZone.getBoundingClientRect();
+      const overlap = !(
+        foodRect.right < zoneRect.left ||
+        foodRect.left > zoneRect.right ||
+        foodRect.bottom < zoneRect.top ||
+        foodRect.top > zoneRect.bottom
+      );
+
+      if (overlap) {
+        feedSeaAngel();
+        spawnSeaAngelHeart(moodImg, "🍤");
+      }
+
+      // Snap back to its resting spot in the layout either way
+      food.style.position = "";
+      food.style.left = "";
+      food.style.top = "";
+      food.style.width = "";
+      food.style.zIndex = "";
+    }
+
+    food.addEventListener("pointerup", endDrag);
+    food.addEventListener("pointercancel", endDrag);
+  }
+}
+
+function spawnSeaAngelHeart(anchorEl, emoji) {
+  if (!anchorEl) return;
+  const heart = document.createElement("div");
+  heart.className = "sea-angel-tap-heart";
+  heart.textContent = emoji || "💗";
+
+  const rect = anchorEl.getBoundingClientRect();
+  heart.style.left = `${rect.left + rect.width / 2 + (Math.random() * 30 - 15)}px`;
+  heart.style.top = `${rect.top}px`;
+
+  document.body.appendChild(heart);
+  setTimeout(() => heart.remove(), 900);
 }
 
 function addSeaAngelLogEntry(entry) {
@@ -1081,8 +1310,12 @@ let blindBagCollectionRef = null;
 let blindBagLogRef = null;
 let currentBlindBagTab = "smiski";
 
+const BLIND_BAG_TAPS_NEEDED = 8;
+let blindBagTapCount = 0;
+
 function switchBlindBagTab(lineKey) {
   currentBlindBagTab = lineKey;
+  blindBagTapCount = 0;
 
   Object.keys(BLIND_BAG_LINES).forEach((key) => {
     const grid = document.getElementById(`blindBagGrid-${key}`);
@@ -1091,8 +1324,43 @@ function switchBlindBagTab(lineKey) {
     if (tab) tab.classList.toggle("active-tool", key === lineKey);
   });
 
-  const unboxBtn = document.getElementById("blindBagUnboxBtn");
-  if (unboxBtn) unboxBtn.textContent = `unbox a ${BLIND_BAG_LINES[lineKey].label} 🎁`;
+  const meterFill = document.getElementById("blindBagShakeMeterFill");
+  if (meterFill) meterFill.style.width = "0%";
+}
+
+function initBlindBagShake() {
+  const bag = document.getElementById("blindBagPlaceholder");
+  if (!bag) return;
+  bag.addEventListener("click", handleBlindBagTap);
+}
+
+function handleBlindBagTap() {
+  if (!isFirebaseReady()) {
+    alert("Blind bag unboxing needs Firebase set up — see the comment near the bottom of main.html.");
+    return;
+  }
+
+  blindBagTapCount++;
+
+  const bag = document.getElementById("blindBagPlaceholder");
+  const meterFill = document.getElementById("blindBagShakeMeterFill");
+
+  if (bag) {
+    bag.classList.remove("shake-1", "shake-2", "shake-3");
+    void bag.offsetWidth; // restart the shake animation on every tap
+    const stage = Math.min(3, Math.ceil((blindBagTapCount / BLIND_BAG_TAPS_NEEDED) * 3)) || 1;
+    bag.classList.add(`shake-${stage}`);
+  }
+
+  if (meterFill) {
+    meterFill.style.width = `${Math.min(100, (blindBagTapCount / BLIND_BAG_TAPS_NEEDED) * 100)}%`;
+  }
+
+  if (blindBagTapCount >= BLIND_BAG_TAPS_NEEDED) {
+    blindBagTapCount = 0;
+    if (meterFill) meterFill.style.width = "0%";
+    unboxBlindBag(currentBlindBagTab);
+  }
 }
 
 function initBlindBag() {
@@ -1100,6 +1368,7 @@ function initBlindBag() {
   if (!anyGrid) return; // section not on this page
 
   switchBlindBagTab("smiski");
+  initBlindBagShake();
 
   if (!isFirebaseReady()) return;
 
