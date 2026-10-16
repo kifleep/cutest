@@ -1275,57 +1275,196 @@ function addSeaAngelLogEntry(entry) {
 
 /* ======================================================
    BLIND BAG UNBOXING (Smiski + Sylvanian Families)
-   The character lists below are placeholders — swap in the
-   real edition names (and add images if you want) any time.
+
+   HOW TO EDIT:
+   - Each line (smiski / sylvanian) has one or more SERIES. Smiski has
+     Living / Bath / Museum — add another by copying a series block.
+   - Every series has its own bag picture ("bagImage") that shows up when
+     you pick that series, and every character gets a picture that shows
+     above its name in the list.
+   - Pictures live in the blindbag/ folder (change BLIND_BAG_IMG_DIR below
+     if you want them somewhere else). Character pictures are found
+     automatically from the names:
+         blindbag/<line>-<series>-<character-name>.png
+     e.g. blindbag/smiski-bath-with-duck.png
+          blindbag/sylvanian-main-persian-cat-baby.png
+     (lowercase, spaces become dashes). You can also set image: "file.png"
+     on a character to override it.
+   - If a picture is missing, the site falls back to blindbag.png for the
+     bag and to the emoji for characters, so nothing breaks.
+   - The character names below are placeholders — swap in the real ones.
    ====================================================== */
+
+const BLIND_BAG_IMG_DIR = "blindbag/";
+const BLIND_BAG_DEFAULT_BAG = "blindbag.png";
 
 const BLIND_BAG_LINES = {
   smiski: {
     label: "Smiski",
-    characters: [
-      { name: "Reading", rarity: "common" },
-      { name: "Sleeping", rarity: "common" },
-      { name: "Stretching", rarity: "common" },
-      { name: "Watering Plant", rarity: "common" },
-      { name: "Doing Yoga", rarity: "rare" },
-      { name: "Playing Guitar", rarity: "rare" },
-      { name: "Glow Secret Star-Gazer", rarity: "secret" }
-    ]
+    defaultSeries: "living",
+    series: {
+      living: {
+        label: "Living",
+        // "smiski" is the OLD database key, kept so anything you already
+        // unlocked in the Living list is still unlocked.
+        collectionKey: "smiski",
+        bagImage: "bag-smiski-living.png",
+        characters: [
+          { name: "Reading", rarity: "common" },
+          { name: "Sleeping", rarity: "common" },
+          { name: "Stretching", rarity: "common" },
+          { name: "Watering Plant", rarity: "common" },
+          { name: "Doing Yoga", rarity: "rare" },
+          { name: "Playing Guitar", rarity: "rare" },
+          { name: "Glow Secret Star-Gazer", rarity: "secret" }
+        ]
+      },
+      bath: {
+        label: "Bath",
+        collectionKey: "smiski_bath",
+        bagImage: "bag-smiski-bath.png",
+        characters: [
+          { name: "Scrubbing", rarity: "common" },
+          { name: "With Duck", rarity: "common" },
+          { name: "Dazed", rarity: "common" },
+          { name: "Peeking", rarity: "common" },
+          { name: "Covering Eyes", rarity: "rare" },
+          { name: "Looking Up", rarity: "rare" },
+          { name: "Bath Secret", rarity: "secret" }
+        ]
+      },
+      museum: {
+        label: "Museum",
+        collectionKey: "smiski_museum",
+        bagImage: "bag-smiski-museum.png",
+        characters: [
+          { name: "Gazing", rarity: "common" },
+          { name: "Pointing", rarity: "common" },
+          { name: "Sketching", rarity: "common" },
+          { name: "Reading Plaque", rarity: "common" },
+          { name: "Posing Like Statue", rarity: "rare" },
+          { name: "Peeking Behind Frame", rarity: "rare" },
+          { name: "Museum Secret", rarity: "secret" }
+        ]
+      }
+    }
   },
   sylvanian: {
     label: "Sylvanian Families",
-    characters: [
-      { name: "Chocolate Rabbit Baby", rarity: "common" },
-      { name: "Cream Rabbit Baby", rarity: "common" },
-      { name: "Walnut Squirrel Baby", rarity: "common" },
-      { name: "Persian Cat Baby", rarity: "common" },
-      { name: "Chiffon Cat Baby", rarity: "rare" },
-      { name: "Husky Dog Baby", rarity: "rare" },
-      { name: "Golden Hamster Secret Edition", rarity: "secret" }
-    ]
+    defaultSeries: "main",
+    series: {
+      main: {
+        label: "Sylvanian Families",
+        collectionKey: "sylvanian", // OLD database key, kept so progress carries over
+        bagImage: "bag-sylvanian.png",
+        characters: [
+          { name: "Chocolate Rabbit Baby", rarity: "common" },
+          { name: "Cream Rabbit Baby", rarity: "common" },
+          { name: "Walnut Squirrel Baby", rarity: "common" },
+          { name: "Persian Cat Baby", rarity: "common" },
+          { name: "Chiffon Cat Baby", rarity: "rare" },
+          { name: "Husky Dog Baby", rarity: "rare" },
+          { name: "Golden Hamster Secret Edition", rarity: "secret" }
+        ]
+      }
+    }
   }
 };
 
 let blindBagCollectionRef = null;
 let blindBagLogRef = null;
 let currentBlindBagTab = "smiski";
+// Remembers which series is picked for each line, so flipping between
+// Smiski and Sylvanian and back doesn't reset your choice.
+const currentBlindBagSeries = {};
+let blindBagCollectionData = {};
 
 const BLIND_BAG_TAPS_NEEDED = 8;
 let blindBagTapCount = 0;
 
-function switchBlindBagTab(lineKey) {
-  currentBlindBagTab = lineKey;
+function getCurrentBlindBagSeries() {
+  const line = BLIND_BAG_LINES[currentBlindBagTab];
+  const seriesKey = currentBlindBagSeries[currentBlindBagTab] || line.defaultSeries;
+  return { lineKey: currentBlindBagTab, line, seriesKey, series: line.series[seriesKey] };
+}
+
+function blindBagSlug(text) {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+function blindBagCharacterImage(lineKey, seriesKey, char) {
+  return BLIND_BAG_IMG_DIR + (char.image || `${lineKey}-${seriesKey}-${blindBagSlug(char.name)}.png`);
+}
+
+function resetBlindBagShake() {
   blindBagTapCount = 0;
-
-  Object.keys(BLIND_BAG_LINES).forEach((key) => {
-    const grid = document.getElementById(`blindBagGrid-${key}`);
-    const tab = document.getElementById(`blindBagTab-${key}`);
-    if (grid) grid.style.display = key === lineKey ? "grid" : "none";
-    if (tab) tab.classList.toggle("active-tool", key === lineKey);
-  });
-
   const meterFill = document.getElementById("blindBagShakeMeterFill");
   if (meterFill) meterFill.style.width = "0%";
+  const bag = document.getElementById("blindBagPlaceholder");
+  if (bag) bag.classList.remove("shake-1", "shake-2", "shake-3");
+}
+
+// Swaps the bag picture to match the selected series
+function updateBlindBagImage() {
+  const bag = document.getElementById("blindBagPlaceholder");
+  if (!bag) return;
+  const { line, series } = getCurrentBlindBagSeries();
+
+  bag.onerror = () => {
+    bag.onerror = null; // avoid an endless loop if the default is missing too
+    bag.src = BLIND_BAG_DEFAULT_BAG;
+  };
+  bag.src = BLIND_BAG_IMG_DIR + series.bagImage;
+  bag.alt = `${line.label} ${series.label} blind bag — tap repeatedly to shake it open!`;
+}
+
+// Builds the row of series buttons (Living / Bath / Museum). Hidden for
+// lines that only have one series (Sylvanian Families).
+function renderBlindBagSeriesButtons() {
+  const row = document.getElementById("blindBagSeriesRow");
+  if (!row) return;
+
+  const { line, seriesKey } = getCurrentBlindBagSeries();
+  const keys = Object.keys(line.series);
+
+  row.innerHTML = "";
+  row.style.display = keys.length > 1 ? "flex" : "none";
+  if (keys.length <= 1) return;
+
+  keys.forEach((key) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "doodle-action-btn blindbag-series-btn" + (key === seriesKey ? " active-tool" : "");
+    btn.id = `blindBagSeries-${key}`;
+    btn.textContent = line.series[key].label;
+    btn.addEventListener("click", () => switchBlindBagSeries(key));
+    row.appendChild(btn);
+  });
+}
+
+function refreshBlindBagView() {
+  Object.keys(BLIND_BAG_LINES).forEach((key) => {
+    const tab = document.getElementById(`blindBagTab-${key}`);
+    if (tab) tab.classList.toggle("active-tool", key === currentBlindBagTab);
+  });
+
+  renderBlindBagSeriesButtons();
+  updateBlindBagImage();
+  renderBlindBagGrid();
+  resetBlindBagShake();
+}
+
+function switchBlindBagTab(lineKey) {
+  if (!BLIND_BAG_LINES[lineKey]) return;
+  currentBlindBagTab = lineKey;
+  refreshBlindBagView();
+}
+
+function switchBlindBagSeries(seriesKey) {
+  const { line } = getCurrentBlindBagSeries();
+  if (!line.series[seriesKey]) return;
+  currentBlindBagSeries[currentBlindBagTab] = seriesKey;
+  refreshBlindBagView();
 }
 
 function initBlindBagShake() {
@@ -1359,13 +1498,13 @@ function handleBlindBagTap() {
   if (blindBagTapCount >= BLIND_BAG_TAPS_NEEDED) {
     blindBagTapCount = 0;
     if (meterFill) meterFill.style.width = "0%";
-    unboxBlindBag(currentBlindBagTab);
+    unboxBlindBag();
   }
 }
 
 function initBlindBag() {
-  const anyGrid = document.getElementById("blindBagGrid-smiski");
-  if (!anyGrid) return; // section not on this page
+  const grid = document.getElementById("blindBagGrid");
+  if (!grid) return; // section not on this page
 
   switchBlindBagTab("smiski");
   initBlindBagShake();
@@ -1375,10 +1514,9 @@ function initBlindBag() {
   blindBagCollectionRef = firebase.database().ref("blindBag/collection");
   blindBagLogRef = firebase.database().ref("blindBag/log");
 
-  renderBlindBagGrids({});
-
   blindBagCollectionRef.on("value", (snap) => {
-    renderBlindBagGrids(snap.val() || {});
+    blindBagCollectionData = snap.val() || {};
+    renderBlindBagGrid();
   });
 
   blindBagLogRef.limitToLast(6).on("child_added", (snap) => {
@@ -1390,8 +1528,9 @@ function blindBagKeyFor(name) {
   return name.replace(/[^a-zA-Z0-9]/g, "_");
 }
 
-function pickRandomBlindBagCharacter(lineKey) {
-  const pool = BLIND_BAG_LINES[lineKey].characters;
+function pickRandomBlindBagCharacter() {
+  const { series } = getCurrentBlindBagSeries();
+  const pool = series.characters;
   const roll = Math.random();
   const rarity = roll < 0.1 ? "secret" : roll < 0.4 ? "rare" : "common";
   const candidates = pool.filter((c) => c.rarity === rarity);
@@ -1399,49 +1538,78 @@ function pickRandomBlindBagCharacter(lineKey) {
   return finalPool[Math.floor(Math.random() * finalPool.length)];
 }
 
-function renderBlindBagGrids(collectionData) {
-  Object.keys(BLIND_BAG_LINES).forEach((lineKey) => {
-    const grid = document.getElementById(`blindBagGrid-${lineKey}`);
-    if (!grid) return;
+// Draws the list for whichever line + series is currently selected
+function renderBlindBagGrid() {
+  const grid = document.getElementById("blindBagGrid");
+  if (!grid) return;
 
-    grid.innerHTML = "";
-    const lineOwned = collectionData[lineKey] || {};
+  const { lineKey, seriesKey, series } = getCurrentBlindBagSeries();
+  const owned = blindBagCollectionData[series.collectionKey] || {};
 
-    BLIND_BAG_LINES[lineKey].characters.forEach((char) => {
-      const key = blindBagKeyFor(char.name);
-      const unlocked = lineOwned[key];
+  grid.innerHTML = "";
 
-      const card = document.createElement("div");
-      card.className = "blindbag-card" + (unlocked ? ` unlocked rarity-${char.rarity}` : " locked");
+  series.characters.forEach((char) => {
+    const unlocked = owned[blindBagKeyFor(char.name)];
+    const icon = unlocked
+      ? (char.rarity === "secret" ? "✨" : char.rarity === "rare" ? "💎" : "🎀")
+      : "❓";
 
-      if (unlocked) {
-        const icon = char.rarity === "secret" ? "✨" : char.rarity === "rare" ? "💎" : "🎀";
-        card.innerHTML =
-          `<div class="blindbag-icon">${icon}</div>` +
-          `<div class="blindbag-name">${char.name}</div>` +
-          `<div class="blindbag-unlocker">found by ${unlocked.name || "someone"}</div>`;
-      } else {
-        card.innerHTML = `<div class="blindbag-icon">❓</div><div class="blindbag-name">???</div>`;
-      }
+    const card = document.createElement("div");
+    card.className = "blindbag-card" + (unlocked ? ` unlocked rarity-${char.rarity}` : " locked");
 
-      grid.appendChild(card);
+    // Picture above the name. If the file isn't there yet, fall back to the emoji.
+    const imgWrap = document.createElement("div");
+    imgWrap.className = "blindbag-card-img-wrap";
+
+    const img = document.createElement("img");
+    img.className = "blindbag-card-img" + (unlocked ? "" : " blindbag-card-img-locked");
+    img.src = blindBagCharacterImage(lineKey, seriesKey, char);
+    img.alt = unlocked ? char.name : "locked";
+    img.loading = "lazy";
+    img.draggable = false;
+    img.addEventListener("error", () => {
+      imgWrap.innerHTML = "";
+      const fallback = document.createElement("div");
+      fallback.className = "blindbag-icon";
+      fallback.textContent = icon;
+      imgWrap.appendChild(fallback);
     });
+    imgWrap.appendChild(img);
+
+    const nameEl = document.createElement("div");
+    nameEl.className = "blindbag-name";
+    nameEl.textContent = unlocked ? char.name : "???";
+
+    card.appendChild(imgWrap);
+    card.appendChild(nameEl);
+
+    if (unlocked) {
+      const unlockerEl = document.createElement("div");
+      unlockerEl.className = "blindbag-unlocker";
+      unlockerEl.textContent = `found by ${unlocked.name || "someone"}`;
+      card.appendChild(unlockerEl);
+    }
+
+    grid.appendChild(card);
   });
 }
 
-function unboxBlindBag(lineKey) {
+function unboxBlindBag() {
   if (!isFirebaseReady()) {
     alert("Blind bag unboxing needs Firebase set up — see the comment near the bottom of main.html.");
     return;
   }
 
-  const chosen = pickRandomBlindBagCharacter(lineKey);
+  const { lineKey, line, series } = getCurrentBlindBagSeries();
+  const chosen = pickRandomBlindBagCharacter();
   const key = blindBagKeyFor(chosen.name);
+  // e.g. "Smiski Bath" for smiski, just "Sylvanian Families" for sylvanian
+  const lineLabel = lineKey === "smiski" ? `${line.label} ${series.label}` : line.label;
 
   if (blindBagLogRef) {
     blindBagLogRef.push({
       name: currentUserName || "someone",
-      line: BLIND_BAG_LINES[lineKey].label,
+      line: lineLabel,
       character: chosen.name,
       rarity: chosen.rarity,
       time: Date.now()
@@ -1452,7 +1620,7 @@ function unboxBlindBag(lineKey) {
     // First person to pull a given character keeps the "found by" credit —
     // later pulls of the same character still get logged above, just don't
     // overwrite who found it first.
-    blindBagCollectionRef.child(lineKey).child(key).transaction((existing) => {
+    blindBagCollectionRef.child(series.collectionKey).child(key).transaction((existing) => {
       if (existing) return existing;
       return { name: currentUserName || "someone", rarity: chosen.rarity, time: Date.now() };
     });
