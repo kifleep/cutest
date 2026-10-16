@@ -1314,6 +1314,19 @@ h2 {
   margin-bottom: 14px;
 }
 
+.blindbag-series-row {
+  display: none; /* script.js shows it when the line has more than one series */
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -4px 0 14px 0;
+}
+
+.blindbag-series-btn {
+  font-size: 0.85em;
+  padding: 5px 12px;
+}
+
 .blindbag-unbox-btn {
   margin-bottom: 6px;
 }
@@ -1406,6 +1419,27 @@ h2 {
 .blindbag-card.unlocked.rarity-secret {
   border-color: #ffd54f;
   background: #fffaf0;
+}
+
+.blindbag-card-img-wrap {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.blindbag-card-img {
+  max-width: 100%;
+  max-height: 72px;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Not found yet: show the shape only, so it's still a surprise */
+.blindbag-card-img-locked {
+  filter: brightness(0) opacity(0.3);
 }
 
 .blindbag-icon {
