@@ -1277,25 +1277,22 @@ function addSeaAngelLogEntry(entry) {
    BLIND BAG UNBOXING (Smiski + Sylvanian Families)
 
    HOW TO EDIT:
-   - Each line (smiski / sylvanian) has one or more SERIES. Smiski has
-     Living / Bath / Museum — add another by copying a series block.
-   - Every series has its own bag picture ("bagImage") that shows up when
-     you pick that series, and every character gets a picture that shows
-     above its name in the list.
-   - Pictures live in the blindbag/ folder (change BLIND_BAG_IMG_DIR below
-     if you want them somewhere else). Character pictures are found
-     automatically from the names:
-         blindbag/<line>-<series>-<character-name>.png
-     e.g. blindbag/smiski-bath-with-duck.png
-          blindbag/sylvanian-main-persian-cat-baby.png
-     (lowercase, spaces become dashes). You can also set image: "file.png"
-     on a character to override it.
+   - Each line (smiski / sylvanian) has SERIES (Smiski: Living / Bath /
+     Museum, Sylvanian: Bunny Costume / Fairytale / Camping). To add one,
+     copy a series block and give it a NEW collectionKey.
+   - "bagImage" is the bag picture shown when that series is selected.
+   - "image" on each character is the picture shown above its name in the
+     list (and replaces the emoji once you've unlocked it).
+   - All pictures go in the same folder as main.html (the same place as
+     rose.png, tulip.png etc). Change BLIND_BAG_IMG_DIR if you'd rather
+     keep them in a subfolder, e.g. "blindbag/".
    - If a picture is missing, the site falls back to blindbag.png for the
      bag and to the emoji for characters, so nothing breaks.
-   - The character names below are placeholders — swap in the real ones.
+   - "rarity" only controls how often something drops here
+     (common 60%, rare 30%, secret 10%) — it isn't the official rarity.
    ====================================================== */
 
-const BLIND_BAG_IMG_DIR = "blindbag/";
+const BLIND_BAG_IMG_DIR = "";
 const BLIND_BAG_DEFAULT_BAG = "blindbag.png";
 
 const BLIND_BAG_LINES = {
@@ -1305,18 +1302,16 @@ const BLIND_BAG_LINES = {
     series: {
       living: {
         label: "Living",
-        // "smiski" is the OLD database key, kept so anything you already
-        // unlocked in the Living list is still unlocked.
-        collectionKey: "smiski",
+        collectionKey: "smiski_living",
         bagImage: "bag-smiski-living.png",
         characters: [
-          { name: "Reading", rarity: "common" },
-          { name: "Sleeping", rarity: "common" },
-          { name: "Stretching", rarity: "common" },
-          { name: "Watering Plant", rarity: "common" },
-          { name: "Doing Yoga", rarity: "rare" },
-          { name: "Playing Guitar", rarity: "rare" },
-          { name: "Glow Secret Star-Gazer", rarity: "secret" }
+          { name: "Daydreaming", rarity: "common", image: "smiski-living-daydreaming.png" },
+          { name: "Playing", rarity: "common", image: "smiski-living-playing.png" },
+          { name: "Hiding", rarity: "common", image: "smiski-living-hiding.png" },
+          { name: "Nap Time", rarity: "common", image: "smiski-living-nap-time.png" },
+          { name: "Thinking", rarity: "rare", image: "smiski-living-thinking.png" },
+          { name: "Lifting", rarity: "rare", image: "smiski-living-lifting.png" },
+          { name: "Sunflower (Secret)", rarity: "secret", image: "smiski-living-secret.png" }
         ]
       },
       bath: {
@@ -1324,13 +1319,13 @@ const BLIND_BAG_LINES = {
         collectionKey: "smiski_bath",
         bagImage: "bag-smiski-bath.png",
         characters: [
-          { name: "Scrubbing", rarity: "common" },
-          { name: "With Duck", rarity: "common" },
-          { name: "Dazed", rarity: "common" },
-          { name: "Peeking", rarity: "common" },
-          { name: "Covering Eyes", rarity: "rare" },
-          { name: "Looking Up", rarity: "rare" },
-          { name: "Bath Secret", rarity: "secret" }
+          { name: "Shampooing", rarity: "common", image: "smiski-bath-shampooing.png" },
+          { name: "Not Looking", rarity: "common", image: "smiski-bath-not-looking.png" },
+          { name: "Scrubbing", rarity: "common", image: "smiski-bath-scrubbing.png" },
+          { name: "With Duck", rarity: "common", image: "smiski-bath-with-duck.png" },
+          { name: "Dazed", rarity: "rare", image: "smiski-bath-dazed.png" },
+          { name: "Looking", rarity: "rare", image: "smiski-bath-looking.png" },
+          { name: "Water Droplet (Secret)", rarity: "secret", image: "smiski-bath-secret.png" }
         ]
       },
       museum: {
@@ -1338,33 +1333,65 @@ const BLIND_BAG_LINES = {
         collectionKey: "smiski_museum",
         bagImage: "bag-smiski-museum.png",
         characters: [
-          { name: "Gazing", rarity: "common" },
-          { name: "Pointing", rarity: "common" },
-          { name: "Sketching", rarity: "common" },
-          { name: "Reading Plaque", rarity: "common" },
-          { name: "Posing Like Statue", rarity: "rare" },
-          { name: "Peeking Behind Frame", rarity: "rare" },
-          { name: "Museum Secret", rarity: "secret" }
+          { name: "The Source", rarity: "common", image: "smiski-museum-the-source.png" },
+          { name: "Fujin & Raijin", rarity: "common", image: "smiski-museum-fujin-raijin.png" },
+          { name: "Bacchus", rarity: "common", image: "smiski-museum-bacchus.png" },
+          { name: "Velázquez", rarity: "common", image: "smiski-museum-velazquez.png" },
+          { name: "Dalí", rarity: "rare", image: "smiski-museum-dali.png" },
+          { name: "Pearl Earring", rarity: "rare", image: "smiski-museum-pearl-earring.png" },
+          { name: "King Tut (Secret)", rarity: "secret", image: "smiski-museum-secret.png" }
         ]
       }
     }
   },
   sylvanian: {
     label: "Sylvanian Families",
-    defaultSeries: "main",
+    defaultSeries: "bunny",
     series: {
-      main: {
-        label: "Sylvanian Families",
-        collectionKey: "sylvanian", // OLD database key, kept so progress carries over
-        bagImage: "bag-sylvanian.png",
+      bunny: {
+        label: "Bunny Costume",
+        collectionKey: "sylvanian_bunny",
+        bagImage: "bag-sylvanian-bunny.png",
+        // Cutie Collectibles - Colourful Bunny Costume Babies (5 babies, no secret)
         characters: [
-          { name: "Chocolate Rabbit Baby", rarity: "common" },
-          { name: "Cream Rabbit Baby", rarity: "common" },
-          { name: "Walnut Squirrel Baby", rarity: "common" },
-          { name: "Persian Cat Baby", rarity: "common" },
-          { name: "Chiffon Cat Baby", rarity: "rare" },
-          { name: "Husky Dog Baby", rarity: "rare" },
-          { name: "Golden Hamster Secret Edition", rarity: "secret" }
+          { name: "Purple Bunny Costume Baby", rarity: "common", image: "sylvanian-bunny-purple.png" },
+          { name: "Teal Bunny Costume Baby", rarity: "common", image: "sylvanian-bunny-teal.png" },
+          { name: "Pink Bunny Costume Baby", rarity: "common", image: "sylvanian-bunny-pink.png" },
+          { name: "Red Bunny Costume Baby", rarity: "rare", image: "sylvanian-bunny-red.png" },
+          { name: "Yellow Bunny Costume Baby", rarity: "rare", image: "sylvanian-bunny-yellow.png" }
+        ]
+      },
+      fairytale: {
+        label: "Fairytale",
+        collectionKey: "sylvanian_fairytale",
+        bagImage: "bag-sylvanian-fairytale.png",
+        // Baby Collectibles - Baby Fairytale Series (7 babies + 1 secret)
+        characters: [
+          { name: "Snow Rabbit Baby with Apple", rarity: "common", image: "sylvanian-fairytale-snow-rabbit.png" },
+          { name: "Husky Baby with Dwarf Hat", rarity: "common", image: "sylvanian-fairytale-husky.png" },
+          { name: "Walnut Squirrel Baby with Feather Hat", rarity: "common", image: "sylvanian-fairytale-walnut-squirrel.png" },
+          { name: "Chocolate Rabbit Baby with Fairy Wings", rarity: "common", image: "sylvanian-fairytale-chocolate-rabbit.png" },
+          { name: "Grey Cat Baby with Rose Dress", rarity: "common", image: "sylvanian-fairytale-grey-cat.png" },
+          { name: "Milk Rabbit Baby with Feather Turban", rarity: "rare", image: "sylvanian-fairytale-milk-rabbit.png" },
+          { name: "Cuddle Bear Baby with Magic Lamp", rarity: "rare", image: "sylvanian-fairytale-cuddle-bear.png" },
+          { name: "Secret Baby", rarity: "secret", image: "sylvanian-fairytale-secret.png" }
+        ]
+      },
+      camping: {
+        label: "Camping",
+        collectionKey: "sylvanian_camping",
+        bagImage: "bag-sylvanian-camping.png",
+        // Baby Camping Series (8 babies + 1 secret)
+        characters: [
+          { name: "Chocolate Rabbit Baby with Frying Pan", rarity: "common", image: "sylvanian-camping-chocolate-rabbit.png" },
+          { name: "Walnut Squirrel Baby with Guitar", rarity: "common", image: "sylvanian-camping-walnut-squirrel.png" },
+          { name: "Beaver Baby with Bonfire", rarity: "common", image: "sylvanian-camping-beaver.png" },
+          { name: "Tuxedo Cat Baby with Bucket", rarity: "common", image: "sylvanian-camping-tuxedo-cat.png" },
+          { name: "Persian Cat Baby with Lantern", rarity: "common", image: "sylvanian-camping-persian-cat.png" },
+          { name: "Bear Baby with Corn", rarity: "rare", image: "sylvanian-camping-bear.png" },
+          { name: "Deer Baby with Binoculars", rarity: "rare", image: "sylvanian-camping-deer.png" },
+          { name: "Cottontail Rabbit Baby with Bandana", rarity: "rare", image: "sylvanian-camping-cottontail-rabbit.png" },
+          { name: "Secret Baby", rarity: "secret", image: "sylvanian-camping-secret.png" }
         ]
       }
     }
@@ -1404,18 +1431,31 @@ function resetBlindBagShake() {
   if (bag) bag.classList.remove("shake-1", "shake-2", "shake-3");
 }
 
-// Swaps the bag picture to match the selected series
+// Swaps the bag picture to match the selected series. Tries the series
+// picture first, then blindbag.png, and only changes the bag once a picture
+// has actually loaded (so you never get a broken-image icon).
+let blindBagImageToken = 0;
+
 function updateBlindBagImage() {
   const bag = document.getElementById("blindBagPlaceholder");
   if (!bag) return;
   const { line, series } = getCurrentBlindBagSeries();
 
-  bag.onerror = () => {
-    bag.onerror = null; // avoid an endless loop if the default is missing too
-    bag.src = BLIND_BAG_DEFAULT_BAG;
-  };
-  bag.src = BLIND_BAG_IMG_DIR + series.bagImage;
   bag.alt = `${line.label} ${series.label} blind bag — tap repeatedly to shake it open!`;
+
+  const token = ++blindBagImageToken;
+  const candidates = [BLIND_BAG_IMG_DIR + series.bagImage, BLIND_BAG_DEFAULT_BAG];
+
+  function tryNext(i) {
+    if (token !== blindBagImageToken || i >= candidates.length) return;
+    const probe = new Image();
+    probe.onload = () => {
+      if (token === blindBagImageToken) bag.src = candidates[i];
+    };
+    probe.onerror = () => tryNext(i + 1);
+    probe.src = candidates[i];
+  }
+  tryNext(0);
 }
 
 // Builds the row of series buttons (Living / Bath / Museum). Hidden for
@@ -1532,7 +1572,13 @@ function pickRandomBlindBagCharacter() {
   const { series } = getCurrentBlindBagSeries();
   const pool = series.characters;
   const roll = Math.random();
-  const rarity = roll < 0.1 ? "secret" : roll < 0.4 ? "rare" : "common";
+  let rarity = roll < 0.1 ? "secret" : roll < 0.4 ? "rare" : "common";
+
+  // Some series have no secret (e.g. Bunny Costume) — step down a tier
+  const has = (r) => pool.some((c) => c.rarity === r);
+  if (rarity === "secret" && !has("secret")) rarity = "rare";
+  if (rarity === "rare" && !has("rare")) rarity = "common";
+
   const candidates = pool.filter((c) => c.rarity === rarity);
   const finalPool = candidates.length ? candidates : pool;
   return finalPool[Math.floor(Math.random() * finalPool.length)];
@@ -1600,11 +1646,11 @@ function unboxBlindBag() {
     return;
   }
 
-  const { lineKey, line, series } = getCurrentBlindBagSeries();
+  const { line, series } = getCurrentBlindBagSeries();
   const chosen = pickRandomBlindBagCharacter();
   const key = blindBagKeyFor(chosen.name);
-  // e.g. "Smiski Bath" for smiski, just "Sylvanian Families" for sylvanian
-  const lineLabel = lineKey === "smiski" ? `${line.label} ${series.label}` : line.label;
+  // e.g. "Smiski Bath" or "Sylvanian Families Camping"
+  const lineLabel = `${line.label} ${series.label}`;
 
   if (blindBagLogRef) {
     blindBagLogRef.push({
